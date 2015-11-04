@@ -1,0 +1,164 @@
+\documentclass{article}\usepackage[]{graphicx}\usepackage[]{color}
+%% maxwidth is the original width if it is less than linewidth
+%% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\usepackage{fullpage}
+\usepackage{booktabs}
+\usepackage{amsthm,amsmath,amssymb}
+\RequirePackage{natbib}
+\usepackage{graphicx}
+
+\title{EPV Demo \\
+\Large
+Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basketball Possession Outcomes}
+\author{Daniel Cervone, Alex D'Amour, Luke Bornn and Kirk Goldsberry}
+\date{}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+
+\maketitle
+
+This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. To begin, we must first set the directories containing the supplemental data and code.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{code.dir} \hlkwb{<-} \hlstr{"~/xyhoops/XYHoops/dlc_src/new/demo/code"}
+\hlstd{data.dir} \hlkwb{<-} \hlstr{"~/xyhoops/XYHoops/dlc_src/new/demo/data"}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+Now we load the \texttt{csv} file containing a full game of optical tracking data:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{dat} \hlkwb{<-} \hlkwd{read.csv}\hlstd{(}\hlkwc{file}\hlstd{=}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/2013_11_01_MIA_BKN.csv"}\hlstd{, data.dir))}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+Each row of \texttt{dat} represents a time point (sampled 25 times per second), and columns include
+
+\begin{table}[!h]
+\begin{center}
+\begin{tabular}{r|ll}
+\toprule
+Column & Value & Notes \\
+\midrule
+\texttt{time} & Real time (ms) & \\
+\texttt{game} & Game ID & \\
+\texttt{quarter} & Quarter & \\
+\texttt{shot\_clock} & Time remaining on shot clock & \\
+\texttt{game\_clock} & Time remaining in quarter (s) & \\
+\texttt{x, y, z} & Ball position (ft) & Court region is $[0, 94] \times [0, 50]$ \\
+\texttt{a1\_ent} & ID number of player 1 on away team (\texttt{a1}) & \\
+\texttt{a1\_x, a1\_y} & Position of \texttt{a1} & \\
+\texttt{a1\_event} & Event code for player \texttt{a1} &  See Table \ref{tab:event_codes} for reference \\
+\texttt{a\#\_*, h\#\_*} & As for \texttt{a1} & \\
+\bottomrule
+\end{tabular}
+\caption{Description of variables in optical tracking data sample.}
+\label{tab:data_desc}
+\end{center}
+\end{table}
+
+Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plot_data}.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/graphics.R"}\hlstd{, code.dir))}
+\hlkwd{par}\hlstd{(}\hlkwc{mar}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{))}
+\hlkwd{data.plotter}\hlstd{(dat,} \hlnum{1800}\hlstd{)}
+\end{alltt}
+\end{kframe}\begin{figure}[h!]
+
+{\centering \includegraphics[width=\maxwidth]{figure/plot_data-1} 
+
+}
+
+\caption[Plotting a single moment of optical tracking data]{Plotting a single moment of optical tracking data.}\label{fig:plot_data}
+\end{figure}
+
+
+\end{knitrout}
+
+In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/data_formatting.R"}\hlstd{, code.dir))}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/covariates.R"}\hlstd{, code.dir))}
+
+\hlstd{poss} \hlkwb{<-} \hlkwd{possession.indicator}\hlstd{(dat)} \hlcom{# infer ballcarrier... takes about a minute}
+\hlstd{new.dat} \hlkwb{<-} \hlkwd{rearrange.data}\hlstd{(dat, poss)} \hlcom{# re-shuffle columns by to ballcarrier... (2 min)}
+\hlstd{new.dat} \hlkwb{<-} \hlkwd{offensive.halfcourt}\hlstd{(new.dat)} \hlcom{# transforming to offensive halfcourt}
+\hlstd{covariates} \hlkwb{<-} \hlkwd{getAllCovars}\hlstd{(new.dat)} \hlcom{# get covariates... (3 min)}
+\hlstd{new.dat} \hlkwb{<-} \hlkwd{data.frame}\hlstd{(new.dat, covariates)}
+\hlkwd{save}\hlstd{(new.dat,} \hlkwc{file}\hlstd{=}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/new.dat.Rdata"}\hlstd{, data.dir))}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{new.dat} \hlkwb{<-} \hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/new.dat.Rdata"}\hlstd{, data.dir))}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+
+
+\end{document}

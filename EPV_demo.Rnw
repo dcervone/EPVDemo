@@ -1,0 +1,86 @@
+\documentclass{article}
+\usepackage{fullpage}
+\usepackage{booktabs}
+\usepackage{amsthm,amsmath,amssymb}
+\RequirePackage{natbib}
+\usepackage{graphicx}
+
+\title{EPV Demo \\
+\Large
+Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basketball Possession Outcomes}
+\author{Daniel Cervone, Alex D'Amour, Luke Bornn and Kirk Goldsberry}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. To begin, we must first set the directories containing the supplemental data and code.
+
+<<directory_setup>>=
+code.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/code"
+data.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/data"
+@
+
+Now we load the \texttt{csv} file containing a full game of optical tracking data:
+
+<<load_data, cache=TRUE>>=
+dat <- read.csv(file=sprintf("%s/2013_11_01_MIA_BKN.csv", data.dir))
+@
+
+Each row of \texttt{dat} represents a time point (sampled 25 times per second), and columns include
+
+\begin{table}[!h]
+\begin{center}
+\begin{tabular}{r|ll}
+\toprule
+Column & Value & Notes \\
+\midrule
+\texttt{time} & Real time (ms) & \\
+\texttt{game} & Game ID & \\
+\texttt{quarter} & Quarter & \\
+\texttt{shot\_clock} & Time remaining on shot clock & \\
+\texttt{game\_clock} & Time remaining in quarter (s) & \\
+\texttt{x, y, z} & Ball position (ft) & Court region is $[0, 94] \times [0, 50]$ \\
+\texttt{a1\_ent} & ID number of player 1 on away team (\texttt{a1}) & \\
+\texttt{a1\_x, a1\_y} & Position of \texttt{a1} & \\
+\texttt{a1\_event} & Event code for player \texttt{a1} &  See Table \ref{tab:event_codes} for reference \\
+\texttt{a\#\_*, h\#\_*} & As for \texttt{a1} & \\
+\bottomrule
+\end{tabular}
+\caption{Description of variables in optical tracking data sample.}
+\label{tab:data_desc}
+\end{center}
+\end{table}
+
+Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plot_data}.
+
+<<plot_data, cache=TRUE, fig.width=5.6, fig.height=3, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Plotting a single moment of optical tracking data.'>>=
+source(sprintf("%s/graphics.R", code.dir))
+par(mar=c(0,0,0,0))
+data.plotter(dat, 1800)
+@
+
+In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
+
+<<manipulate_data, cache=TRUE, eval=FALSE>>=
+source(sprintf("%s/data_formatting.R", code.dir))
+source(sprintf("%s/covariates.R", code.dir))
+
+poss <- possession.indicator(dat) # infer ballcarrier... takes about a minute
+new.dat <- rearrange.data(dat, poss) # re-shuffle columns by to ballcarrier... (2 min)
+new.dat <- offensive.halfcourt(new.dat) # transforming to offensive halfcourt
+covariates <- getAllCovars(new.dat) # get covariates... (3 min)
+new.dat <- data.frame(new.dat, covariates)
+save(new.dat, file=sprintf("%s/new.dat.Rdata", data.dir))
+@
+
+Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
+
+<<load_transformed_data, cache=TRUE>>=
+new.dat <- load(sprintf("%s/new.dat.Rdata", data.dir))
+@
+
+
+
+\end{document}
