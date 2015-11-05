@@ -124,4 +124,5 @@ this.player <- grep("Horford", players$lastname)
 paste(players$firstname, players$lastname)[which(H[this.player, ] == 1)]
 @
 
+Now we can
 \end{document}
