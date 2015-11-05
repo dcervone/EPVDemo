@@ -7,7 +7,7 @@
 
 \title{EPV Demo \\
 \Large
-Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basketball Possession Outcomes}
+Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basketball Possession Outcomes''}
 \author{Daniel Cervone, Alex D'Amour, Luke Bornn and Kirk Goldsberry}
 \date{}
 
@@ -15,21 +15,20 @@ Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basket
 
 \maketitle
 
-This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. To begin, we must first set the directories containing the supplemental data and code.
+This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. 
 
+\section{Loading the Data}
+
+To begin, we must first set the directories containing the supplemental data and code.
 <<directory_setup>>=
 code.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/code"
 data.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/data"
 @
-
 Now we load the \texttt{csv} file containing a full game of optical tracking data:
-
 <<load_data, cache=TRUE>>=
 dat <- read.csv(file=sprintf("%s/2013_11_01_MIA_BKN.csv", data.dir))
 @
-
 Each row of \texttt{dat} represents a time point (sampled 25 times per second), and columns include
-
 \begin{table}[!h]
 \begin{center}
 \begin{tabular}{r|ll}
@@ -54,15 +53,12 @@ Column & Value & Notes \\
 \end{table}
 
 Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plot_data}.
-
-<<plot_data, cache=TRUE, fig.width=5.6, fig.height=3, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Plotting a single moment of optical tracking data.'>>=
+<<plot_data, cache=TRUE, fig.width=5.6, fig.height=3, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Plotting a single moment of optical tracking data.', message=FALSE>>=
 source(sprintf("%s/graphics.R", code.dir))
 par(mar=c(0,0,0,0))
 data.plotter(dat, 1800)
 @
-
 In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
-
 <<manipulate_data, cache=TRUE, eval=FALSE>>=
 source(sprintf("%s/data_formatting.R", code.dir))
 source(sprintf("%s/covariates.R", code.dir))
@@ -74,13 +70,58 @@ covariates <- getAllCovars(new.dat) # get covariates... (3 min)
 new.dat <- data.frame(new.dat, covariates)
 save(new.dat, file=sprintf("%s/new.dat.Rdata", data.dir))
 @
-
 Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
-
 <<load_transformed_data, cache=TRUE>>=
 new.dat <- load(sprintf("%s/new.dat.Rdata", data.dir))
 @
 
+\section{Components of hierarchical models}
 
+The hierarchical models used to estimate parameters for the multiresolution transition models rely on preprocessed data summaries. First, the conditional autoregressive model priors used for many model parameters rely on a graph $\mathbf{H}$ of player similarity. As discussed in the paper, this graph is constructed based on the similarity in players' court occupancy distributions. We can visualize these court occupancy distributions, as well as the similarity scores we calculate between them.
+<<load_player_bases, cache=TRUE>>=
+load(sprintf("%s/playerbases.Rdata", data.dir))
+players <- read.csv(sprintf("%s/players2013.csv", data.dir))
+head(players)
+@
+\texttt{players} is a directory of the 461 NBA players in the 2013-14 season, and \texttt{playerbases.Rdata} contains summaries of their court occupancy patterns. \texttt{df} is the matrix $\mathbf{G}$ from the paper: plotting its rows reveals stark differences in players' spatial occupancy patterns:
+
+<<plot_occupancy, cache=TRUE, fig.width=6, fig.height=1.2, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Court occupancy distributions.'>>=
+par(mfrow=c(1,5))
+for(i in 1:5)
+  spatialPlot0(df[i, ], legend=F)
+@
+
+In the paper, we use non-negative matrix factorization to obtain a rank 5 approximation of the court occupancy distribution matrix. The basis surfaces of this approximation, given in Figure 8 of the paper, are reproduced here:
+<<plot_occupancy_bases, cache=TRUE, fig.width=6, fig.height=1.2, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Court occupancy distribution bases.'>>=
+par(mfrow=c(1,5))
+for(i in 1:5)
+  spatialPlot0(nmf.basis[i, ], legend=F)
+@
+Projected onto this basis, the court occupancy distributions shown in Figure \ref{fig:plot_occupancy} look like:
+<<appx_occupancy, cache=TRUE, fig.width=6, fig.height=1.2, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Low rank court occupancy distributions for players shown in Figure \\ref{fig:plot_occupancy}.'>>=
+df.lowrank <- nmf.coef %*% nmf.basis
+par(mfrow=c(1,5))
+for(i in 1:5)
+  spatialPlot0(df.lowrank[i, ], legend=F)
+@
+It's better to compute player similarity using distance in the space of basis loadings, rather than the original court occupancy distributions, as such distances are calculated across axes that best describe player variation. We calculate \texttt{K}, a distance matrix comparing the loadings for the court occupancy distributions of all 461 players, then map this to a symmetric adjacency matrix \texttt{H} based on finding each player's closest eight neighbors:
+<<adjacency_matrix, cache=TRUE>>=
+K <- matrix(NA, nrow=nrow(df), ncol=nrow(df))
+for(i in 1:nrow(K)){
+  this.coef <- nmf.coef[i, ] / sum(nmf.coef[i, ])
+  K[i, ] <- apply(nmf.coef, 1, function(r) sum((r / sum(r) - this.coef)^2))
+}
+
+H <- 0 * K
+for(i in 1:nrow(H)){
+  inds <- order(K[i, ])[1:8 + 1]
+  H[i,inds] <- H[inds, i] <- 1
+}
+@
+To check any player's ``neighbors'' according to \texttt{H}, we can do (for Al Horford):
+<<check_neighbors, cache=TRUE>>=
+this.player <- grep("Horford", players$lastname)
+paste(players$firstname, players$lastname)[which(H[this.player, ] == 1)]
+@
 
 \end{document}

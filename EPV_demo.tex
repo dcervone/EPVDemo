@@ -56,7 +56,7 @@
 
 \title{EPV Demo \\
 \Large
-Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basketball Possession Outcomes}
+Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basketball Possession Outcomes''}
 \author{Daniel Cervone, Alex D'Amour, Luke Bornn and Kirk Goldsberry}
 \date{}
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
@@ -64,8 +64,11 @@ Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basket
 
 \maketitle
 
-This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. To begin, we must first set the directories containing the supplemental data and code.
+This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. 
 
+\section{Loading the Data}
+
+To begin, we must first set the directories containing the supplemental data and code.
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -74,9 +77,7 @@ This document provides a demonstration of the code, methodology, and inferential
 \end{alltt}
 \end{kframe}
 \end{knitrout}
-
 Now we load the \texttt{csv} file containing a full game of optical tracking data:
-
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -84,9 +85,7 @@ Now we load the \texttt{csv} file containing a full game of optical tracking dat
 \end{alltt}
 \end{kframe}
 \end{knitrout}
-
 Each row of \texttt{dat} represents a time point (sampled 25 times per second), and columns include
-
 \begin{table}[!h]
 \begin{center}
 \begin{tabular}{r|ll}
@@ -111,7 +110,6 @@ Column & Value & Notes \\
 \end{table}
 
 Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plot_data}.
-
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -130,9 +128,7 @@ Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plo
 
 
 \end{knitrout}
-
 In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
-
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -148,9 +144,7 @@ In this format, the data lacks information necessary for computing EPV. Most imp
 \end{alltt}
 \end{kframe}
 \end{knitrout}
-
 Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
-
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -159,6 +153,120 @@ Or, since this takes few minutes to complete, it may be easier to load a pre-com
 \end{kframe}
 \end{knitrout}
 
+\section{Components of hierarchical models}
 
+The hierarchical models used to estimate parameters for the multiresolution transition models rely on preprocessed data summaries. First, the conditional autoregressive model priors used for many model parameters rely on a graph $\mathbf{H}$ of player similarity. As discussed in the paper, this graph is constructed based on the similarity in players' court occupancy distributions. We can visualize these court occupancy distributions, as well as the similarity scores we calculate between them.
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/playerbases.Rdata"}\hlstd{, data.dir))}
+\hlstd{players} \hlkwb{<-} \hlkwd{read.csv}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/players2013.csv"}\hlstd{, data.dir))}
+\hlkwd{head}\hlstd{(players)}
+\end{alltt}
+\begin{verbatim}
+##   X player_id firstname lastname       position height weight byear rookie
+## 1 1      3306     Elton    Brand Forward-Center     81    254  1979   1999
+## 2 2     58293      Kyle   Korver  Guard-Forward     79    212  1981   2003
+## 3 3    292401       Lou Williams          Guard     73    175  1986   2005
+## 4 4    237675      Paul  Millsap Forward-Center     80    258  1985   2006
+## 5 5    280587        Al  Horford Forward-Center     82    250  1986   2007
+## 6 6    398043      Jeff   Teague    Point-Guard     74    181  1988   2009
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\texttt{players} is a directory of the 461 NBA players in the 2013-14 season, and \texttt{playerbases.Rdata} contains summaries of their court occupancy patterns. \texttt{df} is the matrix $\mathbf{G}$ from the paper: plotting its rows reveals stark differences in players' spatial occupancy patterns:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{5}\hlstd{))}
+\hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{)}
+  \hlkwd{spatialPlot0}\hlstd{(df[i, ],} \hlkwc{legend}\hlstd{=F)}
+\end{alltt}
+\end{kframe}\begin{figure}[h!]
+
+{\centering \includegraphics[width=\maxwidth]{figure/plot_occupancy-1} 
+
+}
+
+\caption[Court occupancy distributions]{Court occupancy distributions.}\label{fig:plot_occupancy}
+\end{figure}
+
+
+\end{knitrout}
+
+In the paper, we use non-negative matrix factorization to obtain a rank 5 approximation of the court occupancy distribution matrix. The basis surfaces of this approximation, given in Figure 8 of the paper, are reproduced here:
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{5}\hlstd{))}
+\hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{)}
+  \hlkwd{spatialPlot0}\hlstd{(nmf.basis[i, ],} \hlkwc{legend}\hlstd{=F)}
+\end{alltt}
+\end{kframe}\begin{figure}[h!]
+
+{\centering \includegraphics[width=\maxwidth]{figure/plot_occupancy_bases-1} 
+
+}
+
+\caption[Court occupancy distribution bases]{Court occupancy distribution bases.}\label{fig:plot_occupancy_bases}
+\end{figure}
+
+
+\end{knitrout}
+Projected onto this basis, the court occupancy distributions shown in Figure \ref{fig:plot_occupancy} look like:
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{df.lowrank} \hlkwb{<-} \hlstd{nmf.coef} \hlopt{%*%} \hlstd{nmf.basis}
+\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{5}\hlstd{))}
+\hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{)}
+  \hlkwd{spatialPlot0}\hlstd{(df.lowrank[i, ],} \hlkwc{legend}\hlstd{=F)}
+\end{alltt}
+\end{kframe}\begin{figure}[h!]
+
+{\centering \includegraphics[width=\maxwidth]{figure/appx_occupancy-1} 
+
+}
+
+\caption{Low rank court occupancy distributions for players shown in Figure \ref{fig:plot_occupancy}.}\label{fig:appx_occupancy}
+\end{figure}
+
+
+\end{knitrout}
+It's better to compute player similarity using distance in the space of basis loadings, rather than the original court occupancy distributions, as such distances are calculated across axes that best describe player variation. We calculate \texttt{K}, a distance matrix comparing the loadings for the court occupancy distributions of all 461 players, then map this to a symmetric adjacency matrix \texttt{H} based on finding each player's closest eight neighbors:
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{K} \hlkwb{<-} \hlkwd{matrix}\hlstd{(}\hlnum{NA}\hlstd{,} \hlkwc{nrow}\hlstd{=}\hlkwd{nrow}\hlstd{(df),} \hlkwc{ncol}\hlstd{=}\hlkwd{nrow}\hlstd{(df))}
+\hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlkwd{nrow}\hlstd{(K))\{}
+  \hlstd{this.coef} \hlkwb{<-} \hlstd{nmf.coef[i, ]} \hlopt{/} \hlkwd{sum}\hlstd{(nmf.coef[i, ])}
+  \hlstd{K[i, ]} \hlkwb{<-} \hlkwd{apply}\hlstd{(nmf.coef,} \hlnum{1}\hlstd{,} \hlkwa{function}\hlstd{(}\hlkwc{r}\hlstd{)} \hlkwd{sum}\hlstd{((r} \hlopt{/} \hlkwd{sum}\hlstd{(r)} \hlopt{-} \hlstd{this.coef)}\hlopt{^}\hlnum{2}\hlstd{))}
+\hlstd{\}}
+
+\hlstd{H} \hlkwb{<-} \hlnum{0} \hlopt{*} \hlstd{K}
+\hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlkwd{nrow}\hlstd{(H))\{}
+  \hlstd{inds} \hlkwb{<-} \hlkwd{order}\hlstd{(K[i, ])[}\hlnum{1}\hlopt{:}\hlnum{8} \hlopt{+} \hlnum{1}\hlstd{]}
+  \hlstd{H[i,inds]} \hlkwb{<-} \hlstd{H[inds, i]} \hlkwb{<-} \hlnum{1}
+\hlstd{\}}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+To check any player's ``neighbors'' according to \texttt{H}, we can do (for Al Horford):
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{this.player} \hlkwb{<-} \hlkwd{grep}\hlstd{(}\hlstr{"Horford"}\hlstd{, players}\hlopt{$}\hlstd{lastname)}
+\hlkwd{paste}\hlstd{(players}\hlopt{$}\hlstd{firstname, players}\hlopt{$}\hlstd{lastname)[}\hlkwd{which}\hlstd{(H[this.player, ]} \hlopt{==} \hlnum{1}\hlstd{)]}
+\end{alltt}
+\begin{verbatim}
+##  [1] "Brandon Bass"      "J.J. Hickson"      "Andre Drummond"   
+##  [4] "Tony Mitchell"     "David Lee"         "Dwight Howard"    
+##  [7] "Blake Griffin"     "Zach Randolph"     "Anthony Davis"    
+## [10] "Amar'e Stoudemire" "Jason Maxiell"     "Glen Davis"       
+## [13] "DeMarcus Cousins"  "Jonas Valanciunas" "Enes Kanter"
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
 
 \end{document}
