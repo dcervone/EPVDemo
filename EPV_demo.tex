@@ -69,6 +69,7 @@ This document provides a demonstration of the code, methodology, and inferential
 \section{Loading the Data}
 
 To begin, we must first set the directories containing the supplemental data and code.
+
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -77,7 +78,9 @@ To begin, we must first set the directories containing the supplemental data and
 \end{alltt}
 \end{kframe}
 \end{knitrout}
+
 Now we load the \texttt{csv} file containing a full game of optical tracking data:
+
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -85,6 +88,7 @@ Now we load the \texttt{csv} file containing a full game of optical tracking dat
 \end{alltt}
 \end{kframe}
 \end{knitrout}
+
 Each row of \texttt{dat} represents a time point (sampled 25 times per second), and columns include
 \begin{table}[!h]
 \begin{center}
@@ -110,6 +114,7 @@ Column & Value & Notes \\
 \end{table}
 
 Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plot_data}.
+
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -128,7 +133,9 @@ Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plo
 
 
 \end{knitrout}
+
 In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
+
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -144,6 +151,7 @@ In this format, the data lacks information necessary for computing EPV. Most imp
 \end{alltt}
 \end{kframe}
 \end{knitrout}
+
 Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
@@ -156,6 +164,7 @@ Or, since this takes few minutes to complete, it may be easier to load a pre-com
 \section{Components of hierarchical models}
 
 The hierarchical models used to estimate parameters for the multiresolution transition models rely on preprocessed data summaries. First, the conditional autoregressive model priors used for many model parameters rely on a graph $\mathbf{H}$ of player similarity. As discussed in the paper, this graph is constructed based on the similarity in players' court occupancy distributions. We can visualize these court occupancy distributions, as well as the similarity scores we calculate between them.
+
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -174,6 +183,7 @@ The hierarchical models used to estimate parameters for the multiresolution tran
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
+
 \texttt{players} is a directory of the 461 NBA players in the 2013-14 season, and \texttt{playerbases.Rdata} contains summaries of their court occupancy patterns. \texttt{df} is the matrix $\mathbf{G}$ from the paper: plotting its rows reveals stark differences in players' spatial occupancy patterns:
 
 \begin{knitrout}
@@ -196,6 +206,7 @@ The hierarchical models used to estimate parameters for the multiresolution tran
 \end{knitrout}
 
 In the paper, we use non-negative matrix factorization to obtain a rank 5 approximation of the court occupancy distribution matrix. The basis surfaces of this approximation, given in Figure 8 of the paper, are reproduced here:
+
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -214,6 +225,7 @@ In the paper, we use non-negative matrix factorization to obtain a rank 5 approx
 
 
 \end{knitrout}
+
 Projected onto this basis, the court occupancy distributions shown in Figure \ref{fig:plot_occupancy} look like:
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
@@ -234,7 +246,9 @@ Projected onto this basis, the court occupancy distributions shown in Figure \re
 
 
 \end{knitrout}
+
 It's better to compute player similarity using distance in the space of basis loadings, rather than the original court occupancy distributions, as such distances are calculated across axes that best describe player variation. We calculate \texttt{K}, a distance matrix comparing the loadings for the court occupancy distributions of all 461 players, then map this to a symmetric adjacency matrix \texttt{H} based on finding each player's closest eight neighbors:
+
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -252,7 +266,9 @@ It's better to compute player similarity using distance in the space of basis lo
 \end{alltt}
 \end{kframe}
 \end{knitrout}
+
 To check any player's ``neighbors'' according to \texttt{H}, we can do (for Al Horford):
+
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
@@ -267,6 +283,29 @@ To check any player's ``neighbors'' according to \texttt{H}, we can do (for Al H
 ## [13] "DeMarcus Cousins"  "Jonas Valanciunas" "Enes Kanter"
 \end{verbatim}
 \end{kframe}
+\end{knitrout}
+
+Similarly, let's load the basis functions that are used in representing the spatial effects in players' macrotransition entry models: we denote these basis functions $\phi_{ji}$, where $i=1, \ldots, 10$, and $j$ indexes shot-taking, four different pass options, and turnovers (recall that for the spatial effects in the shot probability model (Equation 10 in the paper), we use the same basis functions as we do for the shot-taking hazard model). To recreate Figure 6 of the paper, which plots the shot-taking bases, we'd do:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/model_util.R"}\hlstd{, code.dir))}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/spatial_bases.Rdata"}\hlstd{, data.dir))}
+\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{2}\hlstd{,}\hlnum{5}\hlstd{))}
+\hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{10}\hlstd{)}
+  \hlkwd{spatialPlot1}\hlstd{(take.basis[i, ],} \hlkwc{legend}\hlstd{=F)}
+\end{alltt}
+\end{kframe}\begin{figure}[h!]
+
+{\centering \includegraphics[width=\maxwidth]{figure/shot_bases-1} 
+
+}
+
+\caption[Shot-taking spatial bases]{Shot-taking spatial bases; this plot is the same as Figure 6 of the paper (though the ordering is different).}\label{fig:shot_bases}
+\end{figure}
+
+
 \end{knitrout}
 
 \end{document}
