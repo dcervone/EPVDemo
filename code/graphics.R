@@ -131,3 +131,30 @@ spatialPlot2 <- function(z1, z2, pts1=NULL, pts2=pts1, cexy=0.5, legend=TRUE) {
       points(pts2, pch=20, cex=cexy)
   } 
 }
+
+
+vectorPlot <- function(io, ...){
+  mesh.proj <- inla.mesh.projector(mesh, dims=c(40,40))
+  v.x <- inla.mesh.project(mesh.proj, io$io.x$summary.random$spatial$mean)
+  v.y <- inla.mesh.project(mesh.proj, io$io.y$summary.random$spatial$mean)
+  goods <- which(mesh.proj$lattice$loc[,1] >= 0 & mesh.proj$lattice$loc[,1] <= 47 & mesh.proj$lattice$loc[,2] >= 0 & mesh.proj$lattice$loc[,2] <= 50)
+  v.x <- as.vector(v.x)
+  v.y <- as.vector(v.y)
+  v.x[setdiff(1:length(v.x), goods)] <- NA
+  v.y[setdiff(1:length(v.y), goods)] <- NA
+  
+  scal <- 1 / (.04 ^ 2) / 2
+  mag <- sqrt(v.x ^ 2 + v.y ^ 2)*scal
+  lwds <- 0.5 + 3*mag/max(c(3.5, max(mag, na.rm=T)))
+  cols <- colorRamp(c("yellow","red"))(mag/max(c(3.5, max(mag, na.rm=T))))
+  plot(c(0,47),c(0,50),xlab="", ylab="", xaxt="n", yaxt="n", type="n") #, ...)
+  draw.halfcourt(lwd=2)
+  for(i in goods){
+    arrows(mesh.proj$lattice$loc[i,1], mesh.proj$lattice$loc[i,2], 
+           mesh.proj$lattice$loc[i,1] + scal*as.vector(v.x)[i],
+           mesh.proj$lattice$loc[i,2] + scal*as.vector(v.y)[i],
+           length=0.065,
+           angle=30, lwd=lwds[i], col=rgb(cols[i,1], cols[i,2], cols[i,3], maxColorValue=255))
+  }
+  
+}

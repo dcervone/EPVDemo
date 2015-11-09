@@ -62,6 +62,7 @@ Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plo
 source(sprintf("%s/graphics.R", code.dir))
 par(mar=c(0,0,0,0))
 data.plotter(dat, 1800)
+
 @
 
 In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
@@ -80,7 +81,7 @@ save(new.dat, file=sprintf("%s/new.dat.Rdata", data.dir))
 
 Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
 <<load_transformed_data, cache=TRUE>>=
-new.dat <- load(sprintf("%s/new.dat.Rdata", data.dir))
+load(sprintf("%s/new.dat.Rdata", data.dir))
 @
 
 \section{Components of hierarchical models}
@@ -142,9 +143,8 @@ paste(players$firstname, players$lastname)[which(H[this.player, ] == 1)]
 
 Similarly, let's load the basis functions that are used in representing the spatial effects in players' macrotransition entry models: we denote these basis functions $\phi_{ji}$, where $i=1, \ldots, 10$, and $j$ indexes shot-taking, four different pass options, and turnovers (recall that for the spatial effects in the shot probability model (Equation 10 in the paper), we use the same basis functions as we do for the shot-taking hazard model). To recreate Figure 6 of the paper, which plots the shot-taking bases, we'd do:
 
-<<shot_bases, cache=TRUE, fig.width=6, fig.height=2.4, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Shot-taking spatial bases; this plot is the same as Figure 6 of the paper (though the ordering is different).'>>=
+<<shot_bases, cache=TRUE, message=FALSE, fig.width=6, fig.height=2.4, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Shot-taking spatial bases; this plot is the same as Figure 6 of the paper (though the ordering is different).'>>=
 source(sprintf("%s/model_util.R", code.dir))
-load(sprintf("%s/spatial_bases.Rdata", data.dir))
 par(mfrow=c(2,5))
 for(i in 1:10)
   spatialPlot1(take.basis[i, ], legend=F)
@@ -152,8 +152,59 @@ for(i in 1:10)
 
 \section{Loading parameters and model estimates}
 
+Here, we will load and illustrate the results of the multiresolution transition models discussed in Section 3 of the paper. First, let's load the (offensive) microtransition model output for LeBron James, print the parameter estimates, and plot of the acceleration effects $\mu^{\ell}_x, \mu^{\ell}_y$, as in Figure 4 of the paper.
 
-% load inla outputs and transition matrices
+<<micro, cache=TRUE, message=FALSE, fig.width=7, fig.height=3.5, out.width='.5\\linewidth', fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap="Plots of acceleration effect for LeBron James' offensive microtransition model.">>=
+player.id <- players$player_id[which(players$firstname == "LeBron" & players$lastname == "James")]
+load(sprintf("%s/micros/%s.Rdata", data.dir, player.id))
+with.ball$io.x$summary.fixed[, 1:5] # x component of LeBron James' micro model during ball possession
+par(mfrow=c(1,2))
+par(mar=c(0,0,0,0))
+vectorPlot(with.ball)
+vectorPlot(without.ball)
+@
+
+The defensive microtransition model is less complicated, and we can fit it very quickly. The code below estimates the same model parameters for all players on defense:
+
+<<def_micro, cache=TRUE, message=FALSE>>=
+def.micro <- microDefModel(new.dat)
+# coefficients are a_x, c_x, and b_x from Equation 6 in paper
+summary(def.micro$mod.x)$coef[, 1:3]
+@
+
+We have six macrotransition entry models (from Section 3.2 of the paper). Each is fit hierarchically for all players in the NBA using the R-INLA software, as discussed in Section 4 of the paper. Let's load the results of the shot-taking macrotransition entry model, and interpret some of the results. 
+
+<<shot_macro, cache=TRUE, message=FALSE>>=
+load(sprintf("%s/INLA_TAKE.Rdata", data.dir))
+inla.out <- inla.out.lite
+# coefficients for time-varying covariates in shot-taking hazard model
+inla.out$summary.fixed[, 1:2]
+@
+
+\texttt{b1} is the coefficient for the loading on the first basis function (Figure \ref{fig:shot_bases}). These are fixed effects, so that player-specific coefficient values are represented as random effects. Due to the structure of INLA output, it takes a bit of processing to arrange these into 
+
+<<bosh_shot_macro, cache=TRUE, message=FALSE>>=
+param.names <- row.names(inla.out$summary.fixed)
+n <- nrow(players)
+player.params <- matrix(NA, nrow=n, ncol=length(param.names))
+for(pl in 1:n) {
+      y.fix <- inla.out$summary.fixed[, "mean"]
+      temp <- names(inla.out$summary.random)
+      basis.inds <- c(which(temp == "p.int"), grep("p.b[0-9][0-9]*", temp))
+      cov.inds <- setdiff(seq(length(inla.out$summary.random)), basis.inds)
+      y.rand <- c(inla.out$summary.random$p.int[pl, "mean"], 
+                  sapply(cov.inds, 
+                         function(k) inla.out$summary.random[[k]][1, "mean"]),
+                  inla.out$summary.random$p.b1[pl + n * (1:n.basis), "mean"])
+      player.params[pl, ] <- y.fix + y.rand
+}
+names(player.params) <- param.names
+load(sprintf("%s/INLA_TAKE.Rdata", data.dir))
+inla.out <- inla.out.lite
+# coefficients for time-varying covariates in shot-taking hazard model
+inla.out$summary.fixed[, 1:2]
+@
+
 
 
 

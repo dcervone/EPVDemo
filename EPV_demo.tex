@@ -156,7 +156,7 @@ Or, since this takes few minutes to complete, it may be easier to load a pre-com
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlstd{new.dat} \hlkwb{<-} \hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/new.dat.Rdata"}\hlstd{, data.dir))}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/new.dat.Rdata"}\hlstd{, data.dir))}
 \end{alltt}
 \end{kframe}
 \end{knitrout}
@@ -291,7 +291,6 @@ Similarly, let's load the basis functions that are used in representing the spat
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/model_util.R"}\hlstd{, code.dir))}
-\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/spatial_bases.Rdata"}\hlstd{, data.dir))}
 \hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{2}\hlstd{,}\hlnum{5}\hlstd{))}
 \hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{10}\hlstd{)}
   \hlkwd{spatialPlot1}\hlstd{(take.basis[i, ],} \hlkwc{legend}\hlstd{=F)}
@@ -307,5 +306,67 @@ Similarly, let's load the basis functions that are used in representing the spat
 
 
 \end{knitrout}
+
+\section{Loading parameters and model estimates}
+
+Here, we will load and illustrate the results of the multiresolution transition models discussed in Section 3 of the paper. First, let's load the (offensive) microtransition model output for LeBron James, print the parameter estimates, and plot of the acceleration effects $\mu^{\ell}_x, \mu^{\ell}_y$, as in Figure 4 of the paper.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{player.id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{which}\hlstd{(players}\hlopt{$}\hlstd{firstname} \hlopt{==} \hlstr{"LeBron"} \hlopt{&} \hlstd{players}\hlopt{$}\hlstd{lastname} \hlopt{==} \hlstr{"James"}\hlstd{)]}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/micros/%s.Rdata"}\hlstd{, data.dir, player.id))}
+\hlstd{with.ball}\hlopt{$}\hlstd{io.x}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{]} \hlcom{# x component of LeBron James' micro model during ball possession}
+\end{alltt}
+\begin{verbatim}
+##                   mean           sd  0.025quant     0.5quant 0.975quant
+## dif       0.9794630172 0.0005972388  0.97829043 0.9794630009 0.98063462
+## intercept 0.0001920039 0.0123200077 -0.02730304 0.0001092341 0.02799413
+\end{verbatim}
+\begin{alltt}
+\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{2}\hlstd{))}
+\hlkwd{par}\hlstd{(}\hlkwc{mar}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{))}
+\hlkwd{vectorPlot}\hlstd{(with.ball)}
+\hlkwd{vectorPlot}\hlstd{(without.ball)}
+\end{alltt}
+\end{kframe}\begin{figure}[h!]
+
+{\centering \includegraphics[width=.5\linewidth]{figure/micro-1} 
+
+}
+
+\caption[Plots of acceleration effect for LeBron James' offensive microtransition model]{Plots of acceleration effect for LeBron James' offensive microtransition model.}\label{fig:micro}
+\end{figure}
+
+
+\end{knitrout}
+
+The defensive microtransition model is less complicated, and we can fit it very quickly. The code below estimates the same model parameters for all players on defense:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{def.micro} \hlkwb{<-} \hlkwd{microDefModel}\hlstd{(new.dat)}
+\hlcom{# coefficients are a_x, c_x, and b_x from Equation 6 in paper}
+\hlkwd{summary}\hlstd{(def.micro}\hlopt{$}\hlstd{mod.x)}\hlopt{$}\hlstd{coef[,} \hlnum{1}\hlopt{:}\hlnum{3}\hlstd{]}
+\end{alltt}
+\begin{verbatim}
+##                                      Estimate   Std. Error    t value
+## (Intercept)                     -0.0013986229 6.612938e-05  -21.14979
+## def.eps.x[-length(def.eps.x)]    0.9816341676 3.841023e-04 2555.65802
+## residual.x[-length(residual.x)] -0.0001942118 6.656132e-06  -29.17788
+## opt.eps.x[-length(opt.eps.x)]    0.0089958396 3.508471e-04   25.64034
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+
+
+% show a micro, a macro entry INLA thing, and a tmat
+
+% load inla outputs and transition matrices
+
+
+
 
 \end{document}
