@@ -74,27 +74,27 @@ draw.fullcourt <- function(...) {
 }
 
 colo <- colorRampPalette(c("white", "#91CF60", "yellow", "red"))
-spatialPlot0 <- function(z, cexy=0.5, legend=TRUE) {
+spatialPlot0 <- function(z, cexy=0.5, legend=TRUE, ...) {
   par(mar=c(0.0,0.0,0.0,0.0))
   if(legend) {
     image.plot(seq(0, 47, l=23), seq(0, 50, l=25), matrix(z, nrow=23, ncol=25),
-               xlim=c(0, 47), ylim=c(0, 50), zlim=range(z), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T)
+               xlim=c(0, 47), ylim=c(0, 50), zlim=range(z), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T, ...)
   } else {
     image(seq(0, 47, l=23), seq(0, 50, l=25), matrix(z, nrow=23, ncol=25),
-          xlim=c(0, 47), ylim=c(0, 50), zlim=range(z), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T)
+          xlim=c(0, 47), ylim=c(0, 50), zlim=range(z), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T, ...)
   } 
   draw.halfcourt(lwd=2)
 }
 
-spatialPlot1 <- function(z, pts1=NULL, pts0=NULL, cexy=0.5, legend=TRUE) {
+spatialPlot1 <- function(z, pts1=NULL, pts0=NULL, cexy=0.5, legend=TRUE, ...) {
   par(mar=c(0.0,0.0,0.0,0.0))
   goods <- which(mesh$loc[, 1] >= 0 & mesh$loc[, 1] <= 47 & mesh$loc[, 2] >= 0 & mesh$loc[, 2] <= 50)
   if(legend) {
     image.plot(mesh.proj$x, mesh.proj$y, inla.mesh.project(mesh.proj, z),
-               xlim=c(0, 47), ylim=c(0, 50), zlim=range(z[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T)
+               xlim=c(0, 47), ylim=c(0, 50), zlim=range(z[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T, ...)
   } else {
     image(mesh.proj$x, mesh.proj$y, inla.mesh.project(mesh.proj, z),
-          xlim=c(0, 47), ylim=c(0, 50), zlim=range(z[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T)
+          xlim=c(0, 47), ylim=c(0, 50), zlim=range(z[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T, ...)
   } 
   draw.halfcourt(lwd=2)
   if(!(is.null(pts1)))
@@ -103,30 +103,30 @@ spatialPlot1 <- function(z, pts1=NULL, pts0=NULL, cexy=0.5, legend=TRUE) {
     points(pts0, pch=20, col="gray", cex=cexy)
 }
 
-spatialPlot2 <- function(z1, z2, pts1=NULL, pts2=pts1, cexy=0.5, legend=TRUE) {
+spatialPlot2 <- function(z1, z2, pts1=NULL, pts2=pts1, cexy=0.5, legend=TRUE, ...) {
   par(mar=c(0.1,0.5,0.1,0.5))
   par(mfrow=c(1,2))
   goods <- which(mesh$loc[, 1] >= 0 & mesh$loc[, 1] <= 47 & mesh$loc[, 2] >= 0 & mesh$loc[, 2] <= 50)
   if(legend) {
     image.plot(mesh.proj$x, mesh.proj$y, inla.mesh.project(mesh.proj, z1),
-               xlim=c(0, 47), ylim=c(0, 50), zlim=range(z1[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T)
+               xlim=c(0, 47), ylim=c(0, 50), zlim=range(z1[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T, ...)
     draw.halfcourt(lwd=2)
     if(!(is.null(pts1)))
       points(pts1, pch=20, cex=cexy)
     image.plot(mesh.proj$x, mesh.proj$y, inla.mesh.project(mesh.proj, z2),
-               xlim=c(0, 47), ylim=c(0, 50), zlim=range(z2[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T)
-    draw.halfcourt.bold()
+               xlim=c(0, 47), ylim=c(0, 50), zlim=range(z2[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T, ...)
+    draw.halfcourt(lwd=2)
     if(!(is.null(pts2)))
       points(pts2, pch=20, cex=cexy)
   } else {
     image(mesh.proj$x, mesh.proj$y, inla.mesh.project(mesh.proj, z1),
-          xlim=c(0, 47), ylim=c(0, 50), zlim=range(z1[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T)
-    draw.halfcourt.bold()
+          xlim=c(0, 47), ylim=c(0, 50), zlim=range(z1[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T, ...)
+    draw.halfcourt(lwd=2)
     if(!(is.null(pts1)))
       points(pts1, pch=20, cex=cexy)
     image(mesh.proj$x, mesh.proj$y, inla.mesh.project(mesh.proj, z2),
-          xlim=c(0, 47), ylim=c(0, 50), zlim=range(z2[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T)
-    draw.halfcourt.bold()
+          xlim=c(0, 47), ylim=c(0, 50), zlim=range(z2[goods]), xlab="", ylab="", xaxt="n", yaxt="n", col=colo(100), useRaster=T, ...)
+    draw.halfcourt(lwd=2)
     if(!(is.null(pts2)))
       points(pts2, pch=20, cex=cexy)
   } 

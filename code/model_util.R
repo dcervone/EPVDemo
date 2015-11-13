@@ -1,3 +1,4 @@
+library(xtable)
 library(data.table)
 library(matrixStats)
 library(fields)

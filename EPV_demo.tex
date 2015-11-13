@@ -51,6 +51,7 @@
 \usepackage{fullpage}
 \usepackage{booktabs}
 \usepackage{amsthm,amsmath,amssymb}
+\usepackage{float}
 \RequirePackage{natbib}
 \usepackage{graphicx}
 
@@ -64,13 +65,15 @@ Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basket
 
 \maketitle
 
+
+
 This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. 
 
 \section{Loading the Data}
 
 To begin, we must first set the directories containing the supplemental data and code.
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlstd{code.dir} \hlkwb{<-} \hlstr{"~/xyhoops/XYHoops/dlc_src/new/demo/code"}
@@ -81,7 +84,7 @@ To begin, we must first set the directories containing the supplemental data and
 
 Now we load the \texttt{csv} file containing a full game of optical tracking data:
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlstd{dat} \hlkwb{<-} \hlkwd{read.csv}\hlstd{(}\hlkwc{file}\hlstd{=}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/2013_11_01_MIA_BKN.csv"}\hlstd{, data.dir))}
@@ -115,14 +118,14 @@ Column & Value & Notes \\
 
 Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plot_data}.
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/graphics.R"}\hlstd{, code.dir))}
-\hlkwd{par}\hlstd{(}\hlkwc{mar}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{))}
+\hlkwd{par}\hlstd{(}\hlkwc{mar}\hlstd{=}\hlkwd{rep}\hlstd{(}\hlnum{0}\hlstd{,} \hlnum{4}\hlstd{))}
 \hlkwd{data.plotter}\hlstd{(dat,} \hlnum{1800}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{figure}[h!]
+\end{kframe}\begin{figure}[H]
 
 {\centering \includegraphics[width=\maxwidth]{figure/plot_data-1} 
 
@@ -136,7 +139,7 @@ Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plo
 
 In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/data_formatting.R"}\hlstd{, code.dir))}
@@ -153,7 +156,8 @@ In this format, the data lacks information necessary for computing EPV. Most imp
 \end{knitrout}
 
 Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
-\begin{knitrout}
+
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/new.dat.Rdata"}\hlstd{, data.dir))}
@@ -165,7 +169,7 @@ Or, since this takes few minutes to complete, it may be easier to load a pre-com
 
 The hierarchical models used to estimate parameters for the multiresolution transition models rely on preprocessed data summaries. First, the conditional autoregressive model priors used for many model parameters rely on a graph $\mathbf{H}$ of player similarity. As discussed in the paper, this graph is constructed based on the similarity in players' court occupancy distributions. We can visualize these court occupancy distributions, as well as the similarity scores we calculate between them.
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/playerbases.Rdata"}\hlstd{, data.dir))}
@@ -186,14 +190,14 @@ The hierarchical models used to estimate parameters for the multiresolution tran
 
 \texttt{players} is a directory of the 461 NBA players in the 2013-14 season, and \texttt{playerbases.Rdata} contains summaries of their court occupancy patterns. \texttt{df} is the matrix $\mathbf{G}$ from the paper: plotting its rows reveals stark differences in players' spatial occupancy patterns:
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{5}\hlstd{))}
 \hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{)}
   \hlkwd{spatialPlot0}\hlstd{(df[i, ],} \hlkwc{legend}\hlstd{=F)}
 \end{alltt}
-\end{kframe}\begin{figure}[h!]
+\end{kframe}\begin{figure}[H]
 
 {\centering \includegraphics[width=\maxwidth]{figure/plot_occupancy-1} 
 
@@ -207,14 +211,14 @@ The hierarchical models used to estimate parameters for the multiresolution tran
 
 In the paper, we use non-negative matrix factorization to obtain a rank 5 approximation of the court occupancy distribution matrix. The basis surfaces of this approximation, given in Figure 8 of the paper, are reproduced here:
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{5}\hlstd{))}
 \hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{)}
   \hlkwd{spatialPlot0}\hlstd{(nmf.basis[i, ],} \hlkwc{legend}\hlstd{=F)}
 \end{alltt}
-\end{kframe}\begin{figure}[h!]
+\end{kframe}\begin{figure}[H]
 
 {\centering \includegraphics[width=\maxwidth]{figure/plot_occupancy_bases-1} 
 
@@ -227,7 +231,8 @@ In the paper, we use non-negative matrix factorization to obtain a rank 5 approx
 \end{knitrout}
 
 Projected onto this basis, the court occupancy distributions shown in Figure \ref{fig:plot_occupancy} look like:
-\begin{knitrout}
+
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlstd{df.lowrank} \hlkwb{<-} \hlstd{nmf.coef} \hlopt{%*%} \hlstd{nmf.basis}
@@ -235,7 +240,7 @@ Projected onto this basis, the court occupancy distributions shown in Figure \re
 \hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{)}
   \hlkwd{spatialPlot0}\hlstd{(df.lowrank[i, ],} \hlkwc{legend}\hlstd{=F)}
 \end{alltt}
-\end{kframe}\begin{figure}[h!]
+\end{kframe}\begin{figure}[H]
 
 {\centering \includegraphics[width=\maxwidth]{figure/appx_occupancy-1} 
 
@@ -249,7 +254,7 @@ Projected onto this basis, the court occupancy distributions shown in Figure \re
 
 It's better to compute player similarity using distance in the space of basis loadings, rather than the original court occupancy distributions, as such distances are calculated across axes that best describe player variation. We calculate \texttt{K}, a distance matrix comparing the loadings for the court occupancy distributions of all 461 players, then map this to a symmetric adjacency matrix \texttt{H} based on finding each player's closest eight neighbors:
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlstd{K} \hlkwb{<-} \hlkwd{matrix}\hlstd{(}\hlnum{NA}\hlstd{,} \hlkwc{nrow}\hlstd{=}\hlkwd{nrow}\hlstd{(df),} \hlkwc{ncol}\hlstd{=}\hlkwd{nrow}\hlstd{(df))}
@@ -257,7 +262,6 @@ It's better to compute player similarity using distance in the space of basis lo
   \hlstd{this.coef} \hlkwb{<-} \hlstd{nmf.coef[i, ]} \hlopt{/} \hlkwd{sum}\hlstd{(nmf.coef[i, ])}
   \hlstd{K[i, ]} \hlkwb{<-} \hlkwd{apply}\hlstd{(nmf.coef,} \hlnum{1}\hlstd{,} \hlkwa{function}\hlstd{(}\hlkwc{r}\hlstd{)} \hlkwd{sum}\hlstd{((r} \hlopt{/} \hlkwd{sum}\hlstd{(r)} \hlopt{-} \hlstd{this.coef)}\hlopt{^}\hlnum{2}\hlstd{))}
 \hlstd{\}}
-
 \hlstd{H} \hlkwb{<-} \hlnum{0} \hlopt{*} \hlstd{K}
 \hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlkwd{nrow}\hlstd{(H))\{}
   \hlstd{inds} \hlkwb{<-} \hlkwd{order}\hlstd{(K[i, ])[}\hlnum{1}\hlopt{:}\hlnum{8} \hlopt{+} \hlnum{1}\hlstd{]}
@@ -269,7 +273,7 @@ It's better to compute player similarity using distance in the space of basis lo
 
 To check any player's ``neighbors'' according to \texttt{H}, we can do (for Al Horford):
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlstd{this.player} \hlkwb{<-} \hlkwd{grep}\hlstd{(}\hlstr{"Horford"}\hlstd{, players}\hlopt{$}\hlstd{lastname)}
@@ -287,15 +291,15 @@ To check any player's ``neighbors'' according to \texttt{H}, we can do (for Al H
 
 Similarly, let's load the basis functions that are used in representing the spatial effects in players' macrotransition entry models: we denote these basis functions $\phi_{ji}$, where $i=1, \ldots, 10$, and $j$ indexes shot-taking, four different pass options, and turnovers (recall that for the spatial effects in the shot probability model (Equation 10 in the paper), we use the same basis functions as we do for the shot-taking hazard model). To recreate Figure 6 of the paper, which plots the shot-taking bases, we'd do:
 
-\begin{knitrout}
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/model_util.R"}\hlstd{, code.dir))}
-\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{2}\hlstd{,}\hlnum{5}\hlstd{))}
+\hlkwd{par}\hlstd{(}\hlkwc{mfrow} \hlstd{=} \hlkwd{c}\hlstd{(}\hlnum{2}\hlstd{,}\hlnum{5}\hlstd{))}
 \hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{10}\hlstd{)}
   \hlkwd{spatialPlot1}\hlstd{(take.basis[i, ],} \hlkwc{legend}\hlstd{=F)}
 \end{alltt}
-\end{kframe}\begin{figure}[h!]
+\end{kframe}\begin{figure}[H]
 
 {\centering \includegraphics[width=\maxwidth]{figure/shot_bases-1} 
 
@@ -311,31 +315,44 @@ Similarly, let's load the basis functions that are used in representing the spat
 
 Here, we will load and illustrate the results of the multiresolution transition models discussed in Section 3 of the paper. First, let's load the (offensive) microtransition model output for LeBron James, print the parameter estimates, and plot of the acceleration effects $\mu^{\ell}_x, \mu^{\ell}_y$, as in Figure 4 of the paper.
 
-\begin{knitrout}
+\begin{footnotesize}
+\begin{kframe}
+\begin{alltt}
+\hlstd{player.id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{which}\hlstd{(players}\hlopt{$}\hlstd{firstname} \hlopt{==} \hlstr{"LeBron"}\hlstd{)]}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/micros/%s.Rdata"}\hlstd{, data.dir, player.id))}
+\hlcom{# x component of LeBron James' micro model during ball possession}
+\hlkwd{xtable}\hlstd{(with.ball}\hlopt{$}\hlstd{io.x}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{])}
+\end{alltt}
+\end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
+% Wed Nov 11 11:52:10 2015
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrrr}
+  \hline
+ & mean & sd & 0.025quant & 0.5quant & 0.975quant \\ 
+  \hline
+dif & 0.98 & 0.00 & 0.98 & 0.98 & 0.98 \\ 
+  intercept & 0.00 & 0.01 & -0.03 & 0.00 & 0.03 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\end{footnotesize}
+
+\begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlstd{player.id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{which}\hlstd{(players}\hlopt{$}\hlstd{firstname} \hlopt{==} \hlstr{"LeBron"} \hlopt{&} \hlstd{players}\hlopt{$}\hlstd{lastname} \hlopt{==} \hlstr{"James"}\hlstd{)]}
-\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/micros/%s.Rdata"}\hlstd{, data.dir, player.id))}
-\hlstd{with.ball}\hlopt{$}\hlstd{io.x}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{]} \hlcom{# x component of LeBron James' micro model during ball possession}
-\end{alltt}
-\begin{verbatim}
-##                   mean           sd  0.025quant     0.5quant 0.975quant
-## dif       0.9794630172 0.0005972388  0.97829043 0.9794630009 0.98063462
-## intercept 0.0001920039 0.0123200077 -0.02730304 0.0001092341 0.02799413
-\end{verbatim}
-\begin{alltt}
-\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{2}\hlstd{))}
-\hlkwd{par}\hlstd{(}\hlkwc{mar}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{))}
+\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{2}\hlstd{),} \hlkwc{mar}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{))}
 \hlkwd{vectorPlot}\hlstd{(with.ball)}
 \hlkwd{vectorPlot}\hlstd{(without.ball)}
 \end{alltt}
-\end{kframe}\begin{figure}[h!]
+\end{kframe}\begin{figure}[H]
 
-{\centering \includegraphics[width=.5\linewidth]{figure/micro-1} 
+{\centering \includegraphics[width=.5\linewidth]{figure/micro_plots-1} 
 
 }
 
-\caption[Plots of acceleration effect for LeBron James' offensive microtransition model]{Plots of acceleration effect for LeBron James' offensive microtransition model.}\label{fig:micro}
+\caption[Plots of acceleration effect for LeBron James' offensive microtransition model]{Plots of acceleration effect for LeBron James' offensive microtransition model.}\label{fig:micro_plots}
 \end{figure}
 
 
@@ -343,30 +360,269 @@ Here, we will load and illustrate the results of the multiresolution transition 
 
 The defensive microtransition model is less complicated, and we can fit it very quickly. The code below estimates the same model parameters for all players on defense:
 
-\begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{footnotesize}
+\begin{kframe}
 \begin{alltt}
 \hlstd{def.micro} \hlkwb{<-} \hlkwd{microDefModel}\hlstd{(new.dat)}
 \hlcom{# coefficients are a_x, c_x, and b_x from Equation 6 in paper}
-\hlkwd{summary}\hlstd{(def.micro}\hlopt{$}\hlstd{mod.x)}\hlopt{$}\hlstd{coef[,} \hlnum{1}\hlopt{:}\hlnum{3}\hlstd{]}
+\hlkwd{xtable}\hlstd{(}\hlkwd{summary}\hlstd{(def.micro}\hlopt{$}\hlstd{mod.x)}\hlopt{$}\hlstd{coef[,} \hlnum{1}\hlopt{:}\hlnum{3}\hlstd{])}
+\end{alltt}
+\end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
+% Wed Nov 11 11:38:04 2015
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrr}
+  \hline
+ & Estimate & Std. Error & t value \\ 
+  \hline
+(Intercept) & -0.00 & 0.00 & -21.15 \\ 
+  def.eps.x[-length(def.eps.x)] & 0.98 & 0.00 & 2555.66 \\ 
+  residual.x[-length(residual.x)] & -0.00 & 0.00 & -29.18 \\ 
+  opt.eps.x[-length(opt.eps.x)] & 0.01 & 0.00 & 25.64 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\end{footnotesize}
+
+
+We have six macrotransition entry models (from Section 3.2 of the paper). Each is fit hierarchically for all players in the NBA using the R-INLA software, as discussed in Section 4 of the paper. Let's load the results of the shot-taking macrotransition entry model, and interpret some of the results. 
+
+\begin{footnotesize}
+\begin{kframe}
+\begin{alltt}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/INLA_TAKE.Rdata"}\hlstd{, data.dir))}
+\hlstd{inla.out} \hlkwb{<-} \hlstd{inla.out.lite}
+\hlcom{# coefficients for time-varying covariates in shot-taking hazard model}
+\hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{2}\hlstd{])}
+\end{alltt}
+\end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
+% Wed Nov 11 11:38:17 2015
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrr}
+  \hline
+ & mean & sd \\ 
+  \hline
+(Intercept) & -3.30 & 0.63 \\ 
+  dribble & -0.32 & 0.01 \\ 
+  ndef & -0.08 & 0.01 \\ 
+  ball.lastsec & 0.06 & 0.00 \\ 
+  b1 & 1.79 & 0.63 \\ 
+  b2 & -1.62 & 0.63 \\ 
+  b3 & -0.52 & 0.64 \\ 
+  b4 & 0.82 & 0.63 \\ 
+  b5 & -6.80 & 0.64 \\ 
+  b6 & -1.60 & 0.64 \\ 
+  b7 & -3.25 & 0.63 \\ 
+  b8 & -2.89 & 0.64 \\ 
+  b9 & -3.62 & 0.63 \\ 
+  b10 & -0.80 & 0.64 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\end{footnotesize}
+
+\texttt{b1} is the coefficient for the loading on the first basis function (Figure \ref{fig:shot_bases}). These are fixed effects, so that player-specific coefficient values are represented as random effects. Parameter inference for the random effects are presented somewhat confusingly in the output from R-INLA. Inference for random effects on the situational covariates are stored in matrices where rows represent different players. For instance, for Chris Bosh, we get the mean, SD, and quantiles of his player-specific \texttt{dribble} parameter\footnote{See Appendix A.1 of the paper for explanations on the meaning of the covariates used} by running:
+
+\begin{footnotesize}
+\begin{kframe}
+\begin{alltt}
+\hlstd{this.player} \hlkwb{<-} \hlkwd{grep}\hlstd{(}\hlstr{"Bosh"}\hlstd{, players}\hlopt{$}\hlstd{lastname)}
+\hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.dribble[this.player,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
+\end{alltt}
+\end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
+% Wed Nov 11 11:43:27 2015
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrrr}
+  \hline
+ & mean & sd & 0.025quant & 0.5quant & 0.975quant \\ 
+  \hline
+237 & 0.31 & 0.09 & 0.14 & 0.31 & 0.49 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\end{footnotesize}
+
+However, the random effects on the spatial basis coefficients are stacked in a $(1 + 10) \times 461$ matrix (there are 461 players in our full NBA data), with 11 461-row submatrices giving the random effects on the intercept and each 10 basis function coefficient, in order. This matrix is copied across all $11$ corresponding output fields in the \texttt{inla.out\$summary.random} object:
+
+\begin{footnotesize}
+\begin{kframe}
+\begin{alltt}
+\hlstd{n.player} \hlkwb{<-} \hlkwd{nrow}\hlstd{(players)}
+\hlcom{# inference for Chris Bosh's intercept and first basis coefficient}
+\hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
+\end{alltt}
+\end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
+% Wed Nov 11 11:38:18 2015
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrrr}
+  \hline
+ & mean & sd & 0.025quant & 0.5quant & 0.975quant \\ 
+  \hline
+237 & -0.02 & 0.47 & -0.95 & -0.02 & 0.90 \\ 
+  238 & -0.56 & 0.49 & -1.52 & -0.56 & 0.40 \\ 
+   \hline
+\end{tabular}
+\end{table}
+\begin{kframe}\begin{alltt}
+\hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.b1[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])} \hlcom{# identical}
+\end{alltt}
+\end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
+% Wed Nov 11 11:38:18 2015
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrrr}
+  \hline
+ & mean & sd & 0.025quant & 0.5quant & 0.975quant \\ 
+  \hline
+237 & -0.02 & 0.47 & -0.95 & -0.02 & 0.90 \\ 
+  238 & -0.56 & 0.49 & -1.52 & -0.56 & 0.40 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\end{footnotesize}
+
+The following code rearranges the output into a single matrix, with each row giving the player-specific parameters' posterior mean (fixed $+$ random effects) for all model components (situational covariates and spatial effects).
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{param.names} \hlkwb{<-} \hlkwd{row.names}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.fixed)}
+\hlstd{n} \hlkwb{<-} \hlkwd{nrow}\hlstd{(players)}
+\hlstd{player.params} \hlkwb{<-} \hlkwd{matrix}\hlstd{(}\hlnum{NA}\hlstd{,} \hlkwc{nrow}\hlstd{=n,} \hlkwc{ncol}\hlstd{=}\hlkwd{length}\hlstd{(param.names))}
+\hlstd{y.fix} \hlkwb{<-} \hlstd{inla.out}\hlopt{$}\hlstd{summary.fixed[,} \hlstr{"mean"}\hlstd{]} \hlcom{# fixed effects}
+\hlstd{temp} \hlkwb{<-} \hlkwd{names}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random)}
+\hlstd{basis.inds} \hlkwb{<-} \hlkwd{c}\hlstd{(}\hlkwd{which}\hlstd{(temp} \hlopt{==} \hlstr{"p.int"}\hlstd{),} \hlkwd{grep}\hlstd{(}\hlstr{"p.b[0-9][0-9]*"}\hlstd{, temp))}
+\hlstd{cov.inds} \hlkwb{<-} \hlkwd{setdiff}\hlstd{(}\hlkwd{seq}\hlstd{(}\hlkwd{length}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random)), basis.inds)}
+\hlkwa{for}\hlstd{(pl} \hlkwa{in} \hlnum{1}\hlopt{:}\hlstd{n) \{}
+  \hlcom{# add players' random effects to fixed effects}
+  \hlstd{y.rand} \hlkwb{<-} \hlkwd{c}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[pl,} \hlstr{"mean"}\hlstd{],}
+    \hlkwd{sapply}\hlstd{(cov.inds,}
+      \hlkwa{function}\hlstd{(}\hlkwc{k}\hlstd{) inla.out}\hlopt{$}\hlstd{summary.random[[k]][pl,} \hlstr{"mean"}\hlstd{]),}
+    \hlstd{inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.b1[pl} \hlopt{+} \hlstd{n} \hlopt{*} \hlstd{(}\hlnum{1}\hlopt{:}\hlstd{n.basis),} \hlstr{"mean"}\hlstd{])}
+  \hlstd{player.params[pl, ]} \hlkwb{<-} \hlstd{y.fix} \hlopt{+} \hlstd{y.rand}
+\hlstd{\}}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+For Chris Bosh, for instance, we can view his parameter estimates and see where each ranks relative to the rest of the league:
+
+\begin{footnotesize}
+\begin{kframe}
+\begin{alltt}
+\hlstd{values} \hlkwb{<-} \hlstd{player.params[this.player, ]}
+\hlstd{ranks} \hlkwb{<-} \hlkwd{apply}\hlstd{(player.params,} \hlnum{2}\hlstd{,} \hlkwa{function}\hlstd{(}\hlkwc{col}\hlstd{)} \hlkwd{rank}\hlstd{(col)[this.player])} \hlcom{# increasing order}
+\hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(param.names, values, ranks),} \hlkwc{digits}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{2}\hlstd{,}\hlnum{0}\hlstd{))}
+\end{alltt}
+\end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
+% Wed Nov 11 11:38:18 2015
+\begin{table}[ht]
+\centering
+\begin{tabular}{rlrr}
+  \hline
+ & param.names & values & ranks \\ 
+  \hline
+1 & (Intercept) & -3.32 & 218 \\ 
+  2 & dribble & -0.00 & 361 \\ 
+  3 & ndef & -0.02 & 251 \\ 
+  4 & ball.lastsec & 0.07 & 234 \\ 
+  5 & b1 & 0.21 & 57 \\ 
+  6 & b2 & -2.32 & 110 \\ 
+  7 & b3 & 0.10 & 322 \\ 
+  8 & b4 & 0.49 & 185 \\ 
+  9 & b5 & -5.02 & 439 \\ 
+  10 & b6 & -2.17 & 146 \\ 
+  11 & b7 & -2.47 & 335 \\ 
+  12 & b8 & -1.80 & 245 \\ 
+  13 & b9 & -3.60 & 231 \\ 
+  14 & b10 & -2.00 & 97 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\end{footnotesize}
+
+The most notable values here a small \texttt{b1} coefficient relative to the rest of the league, and a large \texttt{b5}. Referring to Figure \ref{fig:shot_bases}, we see that this means his shot-taking hazard is relatively low in the right-handed layup area, and relatively high in three point range. This suggests that, adjusting for his baseline shooting rate (\texttt{intercept}) and other situation covariates, Bosh attempts threes at a high rate (per time controlling the ball from three point range), and right-handed layups/dunks at a low rate. This behavior is generally shared among other stretch-4 type players who are catch-and-shoot three-point shooters, and whose touches near the basket come more from slow-developing plays or those that don't lead to shots---like ``isolations'' or offensive rebounds---than from layups or attacking (also, note that Bosh is left handed). For instance, players such as Kevin Love and Dirk Nowitzki exhibit similar behavior.
+
+Analagous to Figure 5 in the paper, we can plot players' spatial effect surfaces. It is also helpful to plot only the random effects, to see where players' spatial tendencies differ from typical league behavior. For Chris Bosh's shot-taking hazard, we get these side-by-side with:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{vars} \hlkwb{<-} \hlkwd{paste0}\hlstd{(}\hlstr{"b"}\hlstd{,} \hlkwd{seq}\hlstd{(n.basis))}
+\hlstd{spat.fixed} \hlkwb{<-} \hlkwd{as.numeric}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.fixed[}\hlstr{"(Intercept)"}\hlstd{,} \hlstr{"mean"}\hlstd{]} \hlopt{+}
+                           \hlkwd{t}\hlstd{(take.basis)} \hlopt{%*%} \hlstd{inla.out}\hlopt{$}\hlstd{summary.fixed[vars,} \hlstr{"mean"}\hlstd{])}
+\hlstd{spat.random} \hlkwb{<-} \hlkwd{as.numeric}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[this.player,} \hlstr{"mean"}\hlstd{]} \hlopt{+}
+                            \hlkwd{t}\hlstd{(take.basis)} \hlopt{%*%} \hlstd{inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[this.player} \hlopt{+} \hlstd{n} \hlopt{*} \hlstd{(}\hlnum{1}\hlopt{:}\hlstd{n.basis),} \hlstr{"mean"}\hlstd{])}
+
+\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{2}\hlstd{),} \hlkwc{mar}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{4}\hlstd{,}\hlnum{1}\hlstd{,}\hlnum{6}\hlstd{))}
+\hlkwd{spatialPlot1}\hlstd{(spat.fixed} \hlopt{+} \hlstd{spat.random,} \hlkwc{axis.args}\hlstd{=}\hlkwd{list}\hlstd{(}\hlkwc{cex.axis}\hlstd{=}\hlnum{0.75}\hlstd{))}
+\hlkwd{spatialPlot1}\hlstd{(spat.random,} \hlkwc{axis.args}\hlstd{=}\hlkwd{list}\hlstd{(}\hlkwc{cex.axis}\hlstd{=}\hlnum{0.75}\hlstd{))}
+\end{alltt}
+\end{kframe}\begin{figure}[H]
+
+{\centering \includegraphics[width=\maxwidth]{figure/bosh_shot_hazard-1} 
+
+}
+
+\caption[Shot-taking spatial effect for Chris Bosh (left)]{Shot-taking spatial effect for Chris Bosh (left). The difference in this surface relative to the rest of the league is illustrated on the right.}\label{fig:bosh_shot_hazard}
+\end{figure}
+
+
+\end{knitrout}
+
+To view the spatial effect on a passing hazard (for instance, to player 1---the point guard), we would do:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/INLA_PASS1.Rdata"}\hlstd{, data.dir))}
+\hlstd{inla.out} \hlkwb{<-} \hlstd{inla.out.lite}
+\hlstd{vars} \hlkwb{<-} \hlkwd{paste0}\hlstd{(}\hlstr{"b"}\hlstd{,} \hlkwd{seq}\hlstd{(n.basis))}
+\hlstd{spat.fixed} \hlkwb{<-} \hlkwd{as.numeric}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.fixed[}\hlstr{"(Intercept)"}\hlstd{,} \hlstr{"mean"}\hlstd{]} \hlopt{+}
+                           \hlkwd{t}\hlstd{(pass1.basis)} \hlopt{%*%} \hlstd{inla.out}\hlopt{$}\hlstd{summary.fixed[vars,} \hlstr{"mean"}\hlstd{])}
+\hlstd{spat.random} \hlkwb{<-} \hlkwd{as.numeric}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[this.player,} \hlstr{"mean"}\hlstd{]} \hlopt{+}
+                            \hlkwd{t}\hlstd{(pass1.basis)} \hlopt{%*%} \hlstd{inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[this.player} \hlopt{+} \hlstd{n} \hlopt{*} \hlstd{(}\hlnum{1}\hlopt{:}\hlstd{n.basis),} \hlstr{"mean"}\hlstd{])}
+
+\hlkwd{par}\hlstd{(}\hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{2}\hlstd{),} \hlkwc{mar}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,}\hlnum{4}\hlstd{,}\hlnum{1}\hlstd{,}\hlnum{6}\hlstd{))}
+\hlkwd{spatialPlot2}\hlstd{(}\hlkwd{head}\hlstd{(spat.fixed} \hlopt{+} \hlstd{spat.random, mesh}\hlopt{$}\hlstd{n),}
+             \hlkwd{tail}\hlstd{(spat.fixed} \hlopt{+} \hlstd{spat.random, mesh}\hlopt{$}\hlstd{n),}
+                  \hlkwc{axis.args}\hlstd{=}\hlkwd{list}\hlstd{(}\hlkwc{cex.axis}\hlstd{=}\hlnum{0.75}\hlstd{))}
+\end{alltt}
+\end{kframe}\begin{figure}[H]
+
+{\centering \includegraphics[width=\maxwidth]{figure/bosh_pass1_hazard-1} 
+
+}
+
+\caption[Spatial effect for passes from Chris Bosh to the point guard]{Spatial effect for passes from Chris Bosh to the point guard. The effect of Bosh's location is on the left, and the effect of the PG's location is on the right.}\label{fig:bosh_pass1_hazard}
+\end{figure}
+
+
+\end{knitrout}
+
+The last model component needed to calculate EPV are the transition probability matrices for $C_t$, described in Section 3.4 of the paper. We load these---for instance, for Dwyane Wade, by running:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{player.id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{grep}\hlstd{(}\hlstr{"Wade"}\hlstd{, players}\hlopt{$}\hlstd{lastname)]}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/tmats/%s.Rdata"}\hlstd{, data.dir, player.id))}
+\hlkwd{names}\hlstd{(tmat.ind)}
 \end{alltt}
 \begin{verbatim}
-##                                      Estimate   Std. Error    t value
-## (Intercept)                     -0.0013986229 6.612938e-05  -21.14979
-## def.eps.x[-length(def.eps.x)]    0.9816341676 3.841023e-04 2555.65802
-## residual.x[-length(residual.x)] -0.0001942118 6.656132e-06  -29.17788
-## opt.eps.x[-length(opt.eps.x)]    0.0089958396 3.508471e-04   25.64034
+## [1] "micros"  "passes1" "passes2" "passes3" "passes4" "absorbs"
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
 
-
-
-% show a micro, a macro entry INLA thing, and a tmat
-
-% load inla outputs and transition matrices
-
-
-
+\texttt{tmat.ind} is a list with each element representing blocks (sub-matrices) of $\mathbf{P}$, the transition matrix for $C_t$ given the players on the court. The rows in each block represent the 14 \{\texttt{region}\} $\times$ \{defended\} states we use in $C_t$ for a given ballcarrier, as expalined in Section 2.2 of the paper. Columns in these blocks also represent such states, except for the \texttt{absorbs} block, where columns represent absorbing states in $\mathcal{C}_{\text{end}}$. Depending on the lineup used, different blocks will be used to construct $\mathbf{P}$. Also note, the \texttt{tmat.pos} object contains blocks used in calculating EPV-Added, as discussed in Section A.4 of the paper.
 
 \end{document}

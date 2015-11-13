@@ -24,8 +24,13 @@ for(i in 1:length(ents)) {
 
 for(i in 1:length(ents)) {
   print(sprintf("%i of %i", i, length(ents)))
-  load(sprintf("/n/gstore/Labs/Bornn_Lab/epv_data/2013/%s/rmat.Rdata", ents[i]))
-  save(tmat_ind, tmat_pos, file=sprintf("/n/gstore/Labs/Bornn_Lab/epv_data/2013/models/tmats/%s.Rdata", ents[i]))
+  load(sprintf("%s/tmats/%s.Rdata", data.dir, ents[i]))
+  #load(sprintf("/n/gstore/Labs/Bornn_Lab/epv_data/2013/%s/rmat.Rdata", ents[i]))
+  tmat.ind <- tmat_ind[c("micros", "passes1c", "passes2c", "passes3c", "passes4c", "absorbsc")]
+  names(tmat.ind) <- c("micros", "passes1", "passes2", "passes3", "passes4", "absorbs")
+  tmat.pos <- tmat_pos[c("micros", "passes1c", "passes2c", "passes3c", "passes4c", "absorbsc")]
+  names(tmat.pos) <- c("micros", "passes1", "passes2", "passes3", "passes4", "absorbs")
+  save(tmat.ind, tmat.pos, file=sprintf("%s/tmats/%s.Rdata", data.dir, ents[i]))
 }
 
 inlas <- c("TAKE", "MAKE", "PASS1", "PASS2", "PASS3", "PASS4", "TO")

@@ -2,6 +2,7 @@
 \usepackage{fullpage}
 \usepackage{booktabs}
 \usepackage{amsthm,amsmath,amssymb}
+\usepackage{float}
 \RequirePackage{natbib}
 \usepackage{graphicx}
 
@@ -14,6 +15,11 @@ Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basket
 \begin{document}
 
 \maketitle
+
+<<chunk_opts, include=F>>=
+opts_chunk$set(size="footnotesize", cache=T, message=F,
+               fig.lp='fig:', fig.pos='H', fig.align='center')
+@
 
 This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. 
 
@@ -28,7 +34,7 @@ data.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/data"
 
 Now we load the \texttt{csv} file containing a full game of optical tracking data:
 
-<<load_data, cache=TRUE>>=
+<<load_data>>=
 dat <- read.csv(file=sprintf("%s/2013_11_01_MIA_BKN.csv", data.dir))
 @
 
@@ -58,16 +64,15 @@ Column & Value & Notes \\
 
 Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plot_data}.
 
-<<plot_data, cache=TRUE, fig.width=5.6, fig.height=3, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Plotting a single moment of optical tracking data.', message=FALSE>>=
+<<plot_data, fig.width=5.6, fig.height=3, fig.cap='Plotting a single moment of optical tracking data.'>>=
 source(sprintf("%s/graphics.R", code.dir))
-par(mar=c(0,0,0,0))
+par(mar=rep(0, 4))
 data.plotter(dat, 1800)
-
 @
 
 In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
 
-<<manipulate_data, cache=TRUE, eval=FALSE>>=
+<<manipulate_data, eval=FALSE>>=
 source(sprintf("%s/data_formatting.R", code.dir))
 source(sprintf("%s/covariates.R", code.dir))
 
@@ -80,7 +85,8 @@ save(new.dat, file=sprintf("%s/new.dat.Rdata", data.dir))
 @
 
 Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
-<<load_transformed_data, cache=TRUE>>=
+
+<<load_transformed_data>>=
 load(sprintf("%s/new.dat.Rdata", data.dir))
 @
 
@@ -88,7 +94,7 @@ load(sprintf("%s/new.dat.Rdata", data.dir))
 
 The hierarchical models used to estimate parameters for the multiresolution transition models rely on preprocessed data summaries. First, the conditional autoregressive model priors used for many model parameters rely on a graph $\mathbf{H}$ of player similarity. As discussed in the paper, this graph is constructed based on the similarity in players' court occupancy distributions. We can visualize these court occupancy distributions, as well as the similarity scores we calculate between them.
 
-<<load_player_bases, cache=TRUE>>=
+<<load_player_bases>>=
 load(sprintf("%s/playerbases.Rdata", data.dir))
 players <- read.csv(sprintf("%s/players2013.csv", data.dir))
 head(players)
@@ -96,7 +102,7 @@ head(players)
 
 \texttt{players} is a directory of the 461 NBA players in the 2013-14 season, and \texttt{playerbases.Rdata} contains summaries of their court occupancy patterns. \texttt{df} is the matrix $\mathbf{G}$ from the paper: plotting its rows reveals stark differences in players' spatial occupancy patterns:
 
-<<plot_occupancy, cache=TRUE, fig.width=6, fig.height=1.2, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Court occupancy distributions.'>>=
+<<plot_occupancy, fig.width=6, fig.height=1.2, fig.cap='Court occupancy distributions.'>>=
 par(mfrow=c(1,5))
 for(i in 1:5)
   spatialPlot0(df[i, ], legend=F)
@@ -104,14 +110,15 @@ for(i in 1:5)
 
 In the paper, we use non-negative matrix factorization to obtain a rank 5 approximation of the court occupancy distribution matrix. The basis surfaces of this approximation, given in Figure 8 of the paper, are reproduced here:
 
-<<plot_occupancy_bases, cache=TRUE, fig.width=6, fig.height=1.2, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Court occupancy distribution bases.'>>=
+<<plot_occupancy_bases, fig.width=6, fig.height=1.2, fig.cap='Court occupancy distribution bases.'>>=
 par(mfrow=c(1,5))
 for(i in 1:5)
   spatialPlot0(nmf.basis[i, ], legend=F)
 @
 
 Projected onto this basis, the court occupancy distributions shown in Figure \ref{fig:plot_occupancy} look like:
-<<appx_occupancy, cache=TRUE, fig.width=6, fig.height=1.2, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Low rank court occupancy distributions for players shown in Figure \\ref{fig:plot_occupancy}.'>>=
+
+<<appx_occupancy, fig.width=6, fig.height=1.2, fig.cap='Low rank court occupancy distributions for players shown in Figure \\ref{fig:plot_occupancy}.'>>=
 df.lowrank <- nmf.coef %*% nmf.basis
 par(mfrow=c(1,5))
 for(i in 1:5)
@@ -120,13 +127,12 @@ for(i in 1:5)
 
 It's better to compute player similarity using distance in the space of basis loadings, rather than the original court occupancy distributions, as such distances are calculated across axes that best describe player variation. We calculate \texttt{K}, a distance matrix comparing the loadings for the court occupancy distributions of all 461 players, then map this to a symmetric adjacency matrix \texttt{H} based on finding each player's closest eight neighbors:
 
-<<adjacency_matrix, cache=TRUE>>=
+<<adjacency_matrix>>=
 K <- matrix(NA, nrow=nrow(df), ncol=nrow(df))
 for(i in 1:nrow(K)){
   this.coef <- nmf.coef[i, ] / sum(nmf.coef[i, ])
   K[i, ] <- apply(nmf.coef, 1, function(r) sum((r / sum(r) - this.coef)^2))
 }
-
 H <- 0 * K
 for(i in 1:nrow(H)){
   inds <- order(K[i, ])[1:8 + 1]
@@ -136,16 +142,16 @@ for(i in 1:nrow(H)){
 
 To check any player's ``neighbors'' according to \texttt{H}, we can do (for Al Horford):
 
-<<check_neighbors, cache=TRUE>>=
+<<check_neighbors>>=
 this.player <- grep("Horford", players$lastname)
 paste(players$firstname, players$lastname)[which(H[this.player, ] == 1)]
 @
 
 Similarly, let's load the basis functions that are used in representing the spatial effects in players' macrotransition entry models: we denote these basis functions $\phi_{ji}$, where $i=1, \ldots, 10$, and $j$ indexes shot-taking, four different pass options, and turnovers (recall that for the spatial effects in the shot probability model (Equation 10 in the paper), we use the same basis functions as we do for the shot-taking hazard model). To recreate Figure 6 of the paper, which plots the shot-taking bases, we'd do:
 
-<<shot_bases, cache=TRUE, message=FALSE, fig.width=6, fig.height=2.4, fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap='Shot-taking spatial bases; this plot is the same as Figure 6 of the paper (though the ordering is different).'>>=
+<<shot_bases, fig.width=6, fig.height=2.4, fig.cap='Shot-taking spatial bases; this plot is the same as Figure 6 of the paper (though the ordering is different).'>>=
 source(sprintf("%s/model_util.R", code.dir))
-par(mfrow=c(2,5))
+par(mfrow = c(2,5))
 for(i in 1:10)
   spatialPlot1(take.basis[i, ], legend=F)
 @
@@ -154,58 +160,137 @@ for(i in 1:10)
 
 Here, we will load and illustrate the results of the multiresolution transition models discussed in Section 3 of the paper. First, let's load the (offensive) microtransition model output for LeBron James, print the parameter estimates, and plot of the acceleration effects $\mu^{\ell}_x, \mu^{\ell}_y$, as in Figure 4 of the paper.
 
-<<micro, cache=TRUE, message=FALSE, fig.width=7, fig.height=3.5, out.width='.5\\linewidth', fig.lp='fig:', fig.pos='h!', fig.align='center', fig.cap="Plots of acceleration effect for LeBron James' offensive microtransition model.">>=
-player.id <- players$player_id[which(players$firstname == "LeBron" & players$lastname == "James")]
+\begin{footnotesize}
+<<micro, results="asis">>=
+player.id <- players$player_id[which(players$firstname == "LeBron")]
 load(sprintf("%s/micros/%s.Rdata", data.dir, player.id))
-with.ball$io.x$summary.fixed[, 1:5] # x component of LeBron James' micro model during ball possession
-par(mfrow=c(1,2))
-par(mar=c(0,0,0,0))
+# x component of LeBron James' micro model during ball possession
+xtable(with.ball$io.x$summary.fixed[, 1:5]) 
+@
+\end{footnotesize}
+
+<<micro_plots, fig.width=7, fig.height=3.5, out.width='.5\\linewidth', fig.cap="Plots of acceleration effect for LeBron James' offensive microtransition model.">>=
+par(mfrow=c(1,2), mar=c(0,0,0,0))
 vectorPlot(with.ball)
 vectorPlot(without.ball)
 @
 
 The defensive microtransition model is less complicated, and we can fit it very quickly. The code below estimates the same model parameters for all players on defense:
 
-<<def_micro, cache=TRUE, message=FALSE>>=
+\begin{footnotesize}
+<<def_micro, results="asis">>=
 def.micro <- microDefModel(new.dat)
 # coefficients are a_x, c_x, and b_x from Equation 6 in paper
-summary(def.micro$mod.x)$coef[, 1:3]
+xtable(summary(def.micro$mod.x)$coef[, 1:3])
 @
+\end{footnotesize}
+
 
 We have six macrotransition entry models (from Section 3.2 of the paper). Each is fit hierarchically for all players in the NBA using the R-INLA software, as discussed in Section 4 of the paper. Let's load the results of the shot-taking macrotransition entry model, and interpret some of the results. 
 
-<<shot_macro, cache=TRUE, message=FALSE>>=
+\begin{footnotesize}
+<<shot_macro, results="asis">>=
 load(sprintf("%s/INLA_TAKE.Rdata", data.dir))
 inla.out <- inla.out.lite
 # coefficients for time-varying covariates in shot-taking hazard model
-inla.out$summary.fixed[, 1:2]
+xtable(inla.out$summary.fixed[, 1:2])
 @
+\end{footnotesize}
 
-\texttt{b1} is the coefficient for the loading on the first basis function (Figure \ref{fig:shot_bases}). These are fixed effects, so that player-specific coefficient values are represented as random effects. Due to the structure of INLA output, it takes a bit of processing to arrange these into 
+\texttt{b1} is the coefficient for the loading on the first basis function (Figure \ref{fig:shot_bases}). These are fixed effects, so that player-specific coefficient values are represented as random effects. Parameter inference for the random effects are presented somewhat confusingly in the output from R-INLA. Inference for random effects on the situational covariates are stored in matrices where rows represent different players. For instance, for Chris Bosh, we get the mean, SD, and quantiles of his player-specific \texttt{dribble} parameter\footnote{See Appendix A.1 of the paper for explanations on the meaning of the covariates used} by running:
 
-<<bosh_shot_macro, cache=TRUE, message=FALSE>>=
+\begin{footnotesize}
+<<bosh_random, results="asis">>=
+this.player <- grep("Bosh", players$lastname)
+xtable(inla.out$summary.random$p.dribble[this.player, 2:6])
+@
+\end{footnotesize}
+
+However, the random effects on the spatial basis coefficients are stacked in a $(1 + 10) \times 461$ matrix (there are 461 players in our full NBA data), with 11 461-row submatrices giving the random effects on the intercept and each 10 basis function coefficient, in order. This matrix is copied across all $11$ corresponding output fields in the \texttt{inla.out\$summary.random} object:
+
+\begin{footnotesize}
+<<bosh_random_spatial, results="asis">>=
+n.player <- nrow(players)
+# inference for Chris Bosh's intercept and first basis coefficient
+xtable(inla.out$summary.random$p.int[this.player + 0:1, 2:6])
+xtable(inla.out$summary.random$p.b1[this.player + 0:1, 2:6]) # identical
+@
+\end{footnotesize}
+
+The following code rearranges the output into a single matrix, with each row giving the player-specific parameters' posterior mean (fixed $+$ random effects) for all model components (situational covariates and spatial effects).
+
+<<rearrange_shot_macro>>=
 param.names <- row.names(inla.out$summary.fixed)
 n <- nrow(players)
 player.params <- matrix(NA, nrow=n, ncol=length(param.names))
+y.fix <- inla.out$summary.fixed[, "mean"] # fixed effects
+temp <- names(inla.out$summary.random)
+basis.inds <- c(which(temp == "p.int"), grep("p.b[0-9][0-9]*", temp))
+cov.inds <- setdiff(seq(length(inla.out$summary.random)), basis.inds)
 for(pl in 1:n) {
-      y.fix <- inla.out$summary.fixed[, "mean"]
-      temp <- names(inla.out$summary.random)
-      basis.inds <- c(which(temp == "p.int"), grep("p.b[0-9][0-9]*", temp))
-      cov.inds <- setdiff(seq(length(inla.out$summary.random)), basis.inds)
-      y.rand <- c(inla.out$summary.random$p.int[pl, "mean"], 
-                  sapply(cov.inds, 
-                         function(k) inla.out$summary.random[[k]][1, "mean"]),
-                  inla.out$summary.random$p.b1[pl + n * (1:n.basis), "mean"])
-      player.params[pl, ] <- y.fix + y.rand
+  # add players' random effects to fixed effects
+  y.rand <- c(inla.out$summary.random$p.int[pl, "mean"], 
+    sapply(cov.inds, 
+      function(k) inla.out$summary.random[[k]][pl, "mean"]),
+    inla.out$summary.random$p.b1[pl + n * (1:n.basis), "mean"])
+  player.params[pl, ] <- y.fix + y.rand
 }
-names(player.params) <- param.names
-load(sprintf("%s/INLA_TAKE.Rdata", data.dir))
-inla.out <- inla.out.lite
-# coefficients for time-varying covariates in shot-taking hazard model
-inla.out$summary.fixed[, 1:2]
 @
 
+For Chris Bosh, for instance, we can view his parameter estimates and see where each ranks relative to the rest of the league:
 
+\begin{footnotesize}
+<<bosh_ranks, results="asis">>=
+values <- player.params[this.player, ]
+ranks <- apply(player.params, 2, function(col) rank(col)[this.player]) # increasing order
+xtable(data.frame(param.names, values, ranks), digits=c(0,0,2,0))
+@
+\end{footnotesize}
+
+The most notable values here a small \texttt{b1} coefficient relative to the rest of the league, and a large \texttt{b5}. Referring to Figure \ref{fig:shot_bases}, we see that this means his shot-taking hazard is relatively low in the right-handed layup area, and relatively high in three point range. This suggests that, adjusting for his baseline shooting rate (\texttt{intercept}) and other situation covariates, Bosh attempts threes at a high rate (per time controlling the ball from three point range), and right-handed layups/dunks at a low rate. This behavior is generally shared among other stretch-4 type players who are catch-and-shoot three-point shooters, and whose touches near the basket come more from slow-developing plays or those that don't lead to shots---like ``isolations'' or offensive rebounds---than from layups or attacking (also, note that Bosh is left handed). For instance, players such as Kevin Love and Dirk Nowitzki exhibit similar behavior.
+
+Analagous to Figure 5 in the paper, we can plot players' spatial effect surfaces. It is also helpful to plot only the random effects, to see where players' spatial tendencies differ from typical league behavior. For Chris Bosh's shot-taking hazard, we get these side-by-side with:
+
+<<bosh_shot_hazard, fig.width=5, fig.height=2, fig.cap='Shot-taking spatial effect for Chris Bosh (left). The difference in this surface relative to the rest of the league is illustrated on the right.'>>=
+vars <- paste0("b", seq(n.basis))
+spat.fixed <- as.numeric(inla.out$summary.fixed["(Intercept)", "mean"] + 
+                           t(take.basis) %*% inla.out$summary.fixed[vars, "mean"])
+spat.random <- as.numeric(inla.out$summary.random$p.int[this.player, "mean"] + 
+                            t(take.basis) %*% inla.out$summary.random$p.int[this.player + n * (1:n.basis), "mean"])
+
+par(mfrow=c(1,2), mar=c(1,4,1,6))
+spatialPlot1(spat.fixed + spat.random, axis.args=list(cex.axis=0.75))
+spatialPlot1(spat.random, axis.args=list(cex.axis=0.75))
+@
+
+To view the spatial effect on a passing hazard (for instance, to player 1---the point guard), we would do:
+
+<<bosh_pass1_hazard, fig.width=5, fig.height=2, fig.cap="Spatial effect for passes from Chris Bosh to the point guard. The effect of Bosh's location is on the left, and the effect of the PG's location is on the right.">>=
+load(sprintf("%s/INLA_PASS1.Rdata", data.dir))
+inla.out <- inla.out.lite
+vars <- paste0("b", seq(n.basis))
+spat.fixed <- as.numeric(inla.out$summary.fixed["(Intercept)", "mean"] + 
+                           t(pass1.basis) %*% inla.out$summary.fixed[vars, "mean"])
+spat.random <- as.numeric(inla.out$summary.random$p.int[this.player, "mean"] + 
+                            t(pass1.basis) %*% inla.out$summary.random$p.int[this.player + n * (1:n.basis), "mean"])
+
+par(mfrow=c(1,2), mar=c(1,4,1,6))
+spatialPlot2(head(spat.fixed + spat.random, mesh$n),
+             tail(spat.fixed + spat.random, mesh$n),
+                  axis.args=list(cex.axis=0.75))
+@
+
+The last model component needed to calculate EPV are the transition probability matrices for $C_t$, described in Section 3.4 of the paper. We load these---for instance, for Dwyane Wade, by running:
+
+<<wade_tmat>>=
+player.id <- players$player_id[grep("Wade", players$lastname)]
+load(sprintf("%s/tmats/%s.Rdata", data.dir, player.id))
+names(tmat.ind)
+@
+
+\texttt{tmat.ind} is a list with each element representing blocks (sub-matrices) of $\tilde{\mathbf{N}}$, the transition count matrix for $C_t$ given the players on the court (see Section 3.4 of the paper). The rows in each block represent the 14 \{\texttt{region}\} $\times$ \{defended\} states we use in $C_t$ for a given ballcarrier, as expalined in Section 2.2 of the paper. Columns in these blocks also represent such states, except for the \texttt{absorbs} block, where columns represent absorbing states in $\mathcal{C}_{\text{end}}$. Depending on the lineup used, different blocks will be used to construct $\mathbf{P}$. Also note, the \texttt{tmat.pos} object contains blocks used in calculating EPV-Added, as discussed in Section A.4 of the paper.
+
+\section{Calculating EPV}
 
 
 
