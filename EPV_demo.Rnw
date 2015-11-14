@@ -292,6 +292,18 @@ names(tmat.ind)
 
 \section{Calculating EPV}
 
+<<EPV_draw>>=
+source(sprintf("%s/model_util.R", code.dir))
+hyper <- getHyperParams(new.dat)
+ev.out <- evLineups(new.dat)
+
+fv.epv.list <- allCalcs(new.dat, hyper, def.micro, ev.out, nmic=5)
+
+@
+
+
+
+
 
 
 \end{document}

@@ -112,6 +112,7 @@ microDefModel <- function(datex) {
 }
 
 getHyperParams <- function(datex) {
+  # loads multiresolution transition model parameters for all players in datex
   inlas <- vector("list", length(inla.names))
   for(i in 1:length(inla.names)) {
     print(sprintf("loading inla output %i of %i", i, length(inla.names)))
@@ -143,38 +144,38 @@ getHyperParams <- function(datex) {
   }
   
   intercepts.x.with <- sapply(1:length(player.ids), 
-                              function(j) micro.inlas[[j]]$with$io.x$inla_out$summary.fixed["intercept", "mean"])
+                              function(j) micro.inlas[[j]]$with$io.x$summary.fixed["intercept", "mean"])
   intercepts.y.with <- sapply(1:length(player.ids), 
-                              function(j) micro.inlas[[j]]$with$io.y$inla_out$summary.fixed["intercept", "mean"])
+                              function(j) micro.inlas[[j]]$with$io.y$summary.fixed["intercept", "mean"])
   coefs.x.with <- sapply(1:length(player.ids), 
-                         function(j) micro.inlas[[j]]$with$io.x$inla_out$summary.fixed["dif", "mean"])
+                         function(j) micro.inlas[[j]]$with$io.x$summary.fixed["dif", "mean"])
   coefs.y.with <- sapply(1:length(player.ids), 
-                         function(j) micro.inlas[[j]]$with$io.y$inla_out$summary.fixed["dif", "mean"])
+                         function(j) micro.inlas[[j]]$with$io.y$summary.fixed["dif", "mean"])
   spats.x.with <- sapply(1:length(player.ids), 
-                         function(j) micro.inlas[[j]]$with$io.x$inla_out$summary.random$spatial[,"mean"])
+                         function(j) micro.inlas[[j]]$with$io.x$summary.random$spatial[,"mean"])
   spats.y.with <- sapply(1:length(player.ids), 
-                         function(j) micro.inlas[[j]]$with$io.y$inla_out$summary.random$spatial[,"mean"])
+                         function(j) micro.inlas[[j]]$with$io.y$summary.random$spatial[,"mean"])
   sigmas.x.with <- sapply(1:length(player.ids), 
-                          function(j) exp(-.5 * micro.inlas[[j]]$with$io.x$inla_out$mode$theta[1]))
+                          function(j) exp(-.5 * micro.inlas[[j]]$with$io.x$mode$theta[1]))
   sigmas.y.with <- sapply(1:length(player.ids), 
-                          function(j) exp(-.5 * micro.inlas[[j]]$with$io.y$inla_out$mode$theta[1]))
+                          function(j) exp(-.5 * micro.inlas[[j]]$with$io.y$mode$theta[1]))
   
   intercepts.x.without <- sapply(1:length(player.ids), 
-                                 function(j) micro.inlas[[j]]$without$io.x$inla_out$summary.fixed["intercept", "mean"])
+                                 function(j) micro.inlas[[j]]$without$io.x$summary.fixed["intercept", "mean"])
   intercepts.y.without <- sapply(1:length(player.ids), 
-                                 function(j) micro.inlas[[j]]$without$io.y$inla_out$summary.fixed["intercept", "mean"])
+                                 function(j) micro.inlas[[j]]$without$io.y$summary.fixed["intercept", "mean"])
   coefs.x.without <- sapply(1:length(player.ids), 
-                            function(j) micro.inlas[[j]]$without$io.x$inla_out$summary.fixed["dif", "mean"])
+                            function(j) micro.inlas[[j]]$without$io.x$summary.fixed["dif", "mean"])
   coefs.y.without <- sapply(1:length(player.ids), 
-                            function(j) micro.inlas[[j]]$without$io.y$inla_out$summary.fixed["dif", "mean"])
+                            function(j) micro.inlas[[j]]$without$io.y$summary.fixed["dif", "mean"])
   spats.x.without <- sapply(1:length(player.ids), 
-                            function(j) micro.inlas[[j]]$without$io.x$inla_out$summary.random$spatial[,"mean"])
+                            function(j) micro.inlas[[j]]$without$io.x$summary.random$spatial[,"mean"])
   spats.y.without <- sapply(1:length(player.ids), 
-                            function(j) micro.inlas[[j]]$without$io.y$inla_out$summary.random$spatial[,"mean"])
+                            function(j) micro.inlas[[j]]$without$io.y$summary.random$spatial[,"mean"])
   sigmas.x.without <- sapply(1:length(player.ids), 
-                             function(j) exp(-.5 * micro.inlas[[j]]$without$io.x$inla_out$mode$theta[1]))
+                             function(j) exp(-.5 * micro.inlas[[j]]$without$io.x$mode$theta[1]))
   sigmas.y.without <- sapply(1:length(player.ids), 
-                             function(j) exp(-.5 * micro.inlas[[j]]$without$io.y$inla_out$mode$theta[1]))
+                             function(j) exp(-.5 * micro.inlas[[j]]$without$io.y$mode$theta[1]))
   
   return(list(player.ids=player.ids, 
               macro.means=macro.means,
@@ -228,7 +229,11 @@ datexCovars <- function(datex) {
               dat.state=dat.state))
 }
 
-evGetter <- function(datex, use.hazards=FALSE, use.leagavg=0) {
+evLineups <- function(datex, use.leagavg=0) {
+  # finds coarsened state expected point value for each lineup combination in datex
+  # inputs:
+  #   datex: possession-formated data frame
+  #   use.leagavg: player_id for whom we substitute league-average parameters
   teammates <- datex[,c("entity", "off1_ent", "off2_ent", "off3_ent", "off4_ent")]
   teammates <- unique(teammates)
   teammates.all <- t(apply(teammates, 1, function(r) teammatesRower(r[1], r[-1])))
@@ -239,7 +244,7 @@ evGetter <- function(datex, use.hazards=FALSE, use.leagavg=0) {
   for(i in 1:nrow(teammates.all)){
     if(i %% 50 == 0)
       print(sprintf("%i of %i", i, nrow(teammates.all)))
-    temp <- tryCatch(calcEV(tmats, teammates.all[i,], use.hazards, use.leagavg), error = function(e) e)
+    temp <- tryCatch(calcEV(tmats, teammates.all[i,], use.leagavg), error = function(e) e)
     if(!(inherits(temp, "error"))) 
       evs[[i]] <- temp 
     else 
@@ -318,7 +323,7 @@ fvToEPV <- function(datex, datex.covars, fv, ev.out) {
 
 fitVals <- function(hyper, datex, datex.covars) {
   fvs <- matrix(NA, nrow=nrow(datex), ncol=length(inla.names))
-  off0.idx <- match(datex$entity, hyper$player.ids)
+  off0.idx <- na.omit(match(datex$entity, hyper$player.ids))
   for (i in 1:length(inla.names)) {
     for(j in unique(off0.idx)) {
       inds <- which(off0.idx == j)
@@ -581,21 +586,21 @@ loadAllTmats <- function(ids) {
   for(i in 1:length(ids)) {
     print(sprintf("loading tmat %i of %i", i, length(ids)))
     if(is.na(ids[i])) {
-      tmats[[i]] <- list(id=NA, tmat_ind=NULL, tmat_pos=NULL)
+      tmats[[i]] <- list(id=NA, tmat.ind=NULL, tmat.pos=NULL)
       next
     }
     id <- ids[i]
     if(file.exists(sprintf("%s/tmats/%s.Rdata", data.dir, id))) {
       load(sprintf("%s/tmats/%s.Rdata", data.dir, id))
-      tmats[[i]] <- list(id=id, tmat_ind=tmat_ind, tmat_pos=tmat_pos)
+      tmats[[i]] <- list(id=id, tmat.ind=tmat.ind, tmat.pos=tmat.pos)
     } else {
-      tmats[[i]] <- list(id=id, tmat_ind=NULL, tmat_pos=NULL)
+      tmats[[i]] <- list(id=id, tmat.ind=NULL, tmat.pos=NULL)
     }
   }
   return(tmats)
 }
 
-tmatRowMaker <- function(tmats, id, place, use.hazards=TRUE, use.leagavg=0){
+tmatRowMaker <- function(tmats, id, place, use.leagavg=0){
   tmat.ids <- sapply(tmats, function(obj) obj$id)
   idx <- which(tmat.ids == id)
   if(length(idx) == 0)
@@ -604,73 +609,49 @@ tmatRowMaker <- function(tmats, id, place, use.hazards=TRUE, use.leagavg=0){
   #  print("error: id matched more than once")
   #  return()
   #}
-  if(is.null(tmats[[idx]]$tmat_ind)) {
+  if(is.null(tmats[[idx]]$tmat.ind)) {
     pos <- as.vector(players$position[which(players$player_id == id)])
     these <- which(players$position == pos)
     id <- players$player_id[these[1]]
     load(sprintf("%s/tmats/%s.Rdata", data.dir, id))
-    mat <- tmat_pos
+    mat <- tmat.pos
   } else {
     if (id %in% use.leagavg) {
-      mat <- tmats[[idx]]$tmat_pos
+      mat <- tmats[[idx]]$tmat.pos
     } else {
-      mat <- tmats[[idx]]$tmat_ind
+      mat <- tmats[[idx]]$tmat.ind
     }
   }
-  if(use.hazards == TRUE){
-    if(place == 1){
-      tmat <- cbind(
-        mat$micros, mat$passes1, mat$passes2,
-        mat$passes3, mat$passes4, mat$absorbs)
-    } else if(place == 2){
-      tmat <- cbind(
-        mat$passes1, mat$micros, mat$passes2,
-        mat$passes3, mat$passes4, mat$absorbs)
-    } else if(place == 3){
-      tmat <- cbind(
-        mat$passes1, mat$passes2, mat$micros, 
-        mat$passes3, mat$passes4, mat$absorbs)
-    } else if(place == 4){
-      tmat <- cbind(
-        mat$passes1, mat$passes2,
-        mat$passes3, mat$micros, mat$passes4, mat$absorbs)
-    } else {
-      tmat <- cbind(
-        mat$passes1, mat$passes2,
-        mat$passes3, mat$passes4, mat$micros, mat$absorbs)
-    } 
+  if(place == 1){
+    tmat <- cbind(
+      mat$micros, mat$passes1, mat$passes2,
+      mat$passes3, mat$passes4, mat$absorbs)
+  } else if(place == 2){
+    tmat <- cbind(
+      mat$passes1, mat$micros, mat$passes2,
+      mat$passes3, mat$passes4, mat$absorbs)
+  } else if(place == 3){
+    tmat <- cbind(
+      mat$passes1, mat$passes2, mat$micros, 
+      mat$passes3, mat$passes4, mat$absorbs)
+  } else if(place == 4){
+    tmat <- cbind(
+      mat$passes1, mat$passes2,
+      mat$passes3, mat$micros, mat$passes4, mat$absorbs)
   } else {
-    if(place == 1){
-      tmat <- cbind(
-        mat$micros, mat$passes1c, mat$passes2c,
-        mat$passes3c, mat$passes4c, mat$absorbsc)
-    } else if(place == 2){
-      tmat <- cbind(
-        mat$passes1c, mat$micros, mat$passes2c,
-        mat$passes3c, mat$passes4c, mat$absorbsc)
-    } else if(place == 3){
-      tmat <- cbind(
-        mat$passes1c, mat$passes2c, mat$micros, 
-        mat$passes3c, mat$passes4c, mat$absorbsc)
-    } else if(place == 4){
-      tmat <- cbind(
-        mat$passes1c, mat$passes2c,
-        mat$passes3c, mat$micros, mat$passes4c, mat$absorbsc)
-    } else {
-      tmat <- cbind(
-        mat$passes1c, mat$passes2c,
-        mat$passes3c, mat$passes4c, mat$micros, mat$absorbsc)
-    } 
+    tmat <- cbind(
+      mat$passes1, mat$passes2,
+      mat$passes3, mat$passes4, mat$micros, mat$absorbs)
   } 
   return(tmat)
 }
 
-calcEV <- function(tmats, teamrow, use.hazards=TRUE, use.leagavg=0){
-  p1_mat <- tmatRowMaker(tmats, teamrow[1], 1, use.hazards, use.leagavg)
-  p2_mat <- tmatRowMaker(tmats, teamrow[2], 2, use.hazards, use.leagavg)
-  p3_mat <- tmatRowMaker(tmats, teamrow[3], 3, use.hazards, use.leagavg)
-  p4_mat <- tmatRowMaker(tmats, teamrow[4], 4, use.hazards, use.leagavg)
-  p5_mat <- tmatRowMaker(tmats, teamrow[5], 5, use.hazards, use.leagavg)
+calcEV <- function(tmats, teamrow, use.leagavg=0){
+  p1_mat <- tmatRowMaker(tmats, teamrow[1], 1, use.leagavg)
+  p2_mat <- tmatRowMaker(tmats, teamrow[2], 2, use.leagavg)
+  p3_mat <- tmatRowMaker(tmats, teamrow[3], 3, use.leagavg)
+  p4_mat <- tmatRowMaker(tmats, teamrow[4], 4, use.leagavg)
+  p5_mat <- tmatRowMaker(tmats, teamrow[5], 5, use.leagavg)
   tmat <- rbind(p1_mat, p2_mat, p3_mat, p4_mat, p5_mat)
   tmat[which(is.na(tmat), arr.ind=T)] <- 0
   tmat <- as.matrix(tmat)
@@ -687,12 +668,12 @@ calcEV <- function(tmats, teamrow, use.hazards=TRUE, use.leagavg=0){
   return(vals)
 }
 
-doEPV <- function(tmats, use.hazards=TRUE, use.leagavg=0, fullres=TRUE){
+doEPV <- function(tmats, use.leagavg=0, fullres=TRUE){
   evs <- list()
   for(i in 1:nrow(teammates.all)){
     if(i %% 50 == 0)
       print(sprintf("%i of %i", i, nrow(teammates.all)))
-    temp <- tryCatch(calcEV(tmats, teammates.all[i,], use.hazards, use.leagavg), error = function(e) e)
+    temp <- tryCatch(calcEV(tmats, teammates.all[i,], use.leagavg), error = function(e) e)
     if(!(inherits(temp, "error"))) evs[[i]] <- temp else evs[[i]] <- NA
   }
   

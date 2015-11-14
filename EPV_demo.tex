@@ -623,6 +623,10 @@ The last model component needed to calculate EPV are the transition probability 
 \end{kframe}
 \end{knitrout}
 
-\texttt{tmat.ind} is a list with each element representing blocks (sub-matrices) of $\mathbf{P}$, the transition matrix for $C_t$ given the players on the court. The rows in each block represent the 14 \{\texttt{region}\} $\times$ \{defended\} states we use in $C_t$ for a given ballcarrier, as expalined in Section 2.2 of the paper. Columns in these blocks also represent such states, except for the \texttt{absorbs} block, where columns represent absorbing states in $\mathcal{C}_{\text{end}}$. Depending on the lineup used, different blocks will be used to construct $\mathbf{P}$. Also note, the \texttt{tmat.pos} object contains blocks used in calculating EPV-Added, as discussed in Section A.4 of the paper.
+\texttt{tmat.ind} is a list with each element representing blocks (sub-matrices) of $\tilde{\mathbf{N}}$, the transition count matrix for $C_t$ given the players on the court (see Section 3.4 of the paper). The rows in each block represent the 14 \{\texttt{region}\} $\times$ \{defended\} states we use in $C_t$ for a given ballcarrier, as expalined in Section 2.2 of the paper. Columns in these blocks also represent such states, except for the \texttt{absorbs} block, where columns represent absorbing states in $\mathcal{C}_{\text{end}}$. Depending on the lineup used, different blocks will be used to construct $\mathbf{P}$. Also note, the \texttt{tmat.pos} object contains blocks used in calculating EPV-Added, as discussed in Section A.4 of the paper.
+
+\section{Calculating EPV}
+
+
 
 \end{document}
