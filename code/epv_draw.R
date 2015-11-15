@@ -1,5 +1,5 @@
-code.dir <- "./code"
-data.dir <- "./data"
+code.dir <- "../code"
+data.dir <- "../data"
 # code.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/code"
 # data.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/data"
 
