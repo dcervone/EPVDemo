@@ -323,9 +323,9 @@ fvToEPV <- function(datex, datex.covars, fv, ev.out) {
 
 fitVals <- function(hyper, datex, datex.covars) {
   fvs <- matrix(NA, nrow=nrow(datex), ncol=length(inla.names))
-  off0.idx <- na.omit(match(datex$entity, hyper$player.ids))
+  off0.idx <- match(datex$entity, hyper$player.ids)
   for (i in 1:length(inla.names)) {
-    for(j in unique(off0.idx)) {
+    for(j in na.omit(unique(off0.idx))) {
       inds <- which(off0.idx == j)
       dat.fix <- datex.covars$dat.fix[[i]][inds, ]
       dat.spat <- datex.covars$dat.spat[[i]][inds, ]
