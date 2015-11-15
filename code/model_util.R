@@ -571,6 +571,9 @@ microDatex <- function(micro.def.mod, hyper,
   datex[,c("def1_y", "def2_y", "def3_y", "def4_y", "def5_y")] <- def.new.y
   datex[,"ndef"] <- getNdef(datex, "x", "y")
   datex[, "eP"] <- getPlace(datex) 
+  threept.out <- getThree(datex)
+  datex[, "bask.dist"] <- threept.out$bask.dist
+  datex[, "threept"] <- threept.out$threept
   return(list(datex=datex, off.eps.x=off.eps.x, off.eps.y=off.eps.y, 
               def.eps.x=def.eps.x, def.eps.y=def.eps.y))
 }

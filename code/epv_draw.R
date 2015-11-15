@@ -21,11 +21,8 @@ hyper <- getHyperParams(new.dat)
 ev.out <- evLineups(new.dat)
   
 fv.epv.list <- allCalcs(new.dat, hyper, def.micro, ev.out, nmic=5)
-epv <- compressEPV(datex, fv.epv.list)
+save(fv.epv.list, file="fv.epv.list.Rdata")
+epv <- compressEPV(new.dat, fv.epv.list)
 
 dir.create(sprintf("%s/EPVdraws/", data.dir))
 save(epv, file=sprintf("%s/EPVdraws/%03.f.Rdata", data.dir, draw))
-
-# 293 + 248 + 258 + 271 + 231 + 404 + 420 = 35:25
-
-3252 + 5 * 2500 + 3509
