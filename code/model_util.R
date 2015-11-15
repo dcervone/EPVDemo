@@ -242,8 +242,8 @@ evLineups <- function(datex, use.leagavg=0) {
   adder.mat <- matrix(NA, nrow=nrow(teammates), ncol=5)
   theses <- vector("list", nrow(teammates))
   for(i in 1:nrow(teammates.all)){
-    if(i %% 50 == 0)
-      # print(sprintf("%i of %i", i, nrow(teammates.all)))
+    # if(i %% 50 == 0)
+    #   print(sprintf("%i of %i", i, nrow(teammates.all)))
     temp <- tryCatch(calcEV(tmats, teammates.all[i,], use.leagavg), error = function(e) e)
     if(!(inherits(temp, "error"))) 
       evs[[i]] <- temp 
@@ -675,8 +675,8 @@ calcEV <- function(tmats, teamrow, use.leagavg=0){
 doEPV <- function(tmats, use.leagavg=0, fullres=TRUE){
   evs <- list()
   for(i in 1:nrow(teammates.all)){
-    if(i %% 50 == 0)
-      print(sprintf("%i of %i", i, nrow(teammates.all)))
+    # if(i %% 50 == 0)
+    #   print(sprintf("%i of %i", i, nrow(teammates.all)))
     temp <- tryCatch(calcEV(tmats, teammates.all[i,], use.leagavg), error = function(e) e)
     if(!(inherits(temp, "error"))) evs[[i]] <- temp else evs[[i]] <- NA
   }
