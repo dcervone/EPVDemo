@@ -294,7 +294,7 @@ Similarly, let's load the basis functions that are used in representing the spat
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/model_util.R"}\hlstd{, code.dir))}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/model_util.R"}\hlstd{, code.dir))} \hlcom{# loads many modeling functions}
 \hlkwd{par}\hlstd{(}\hlkwc{mfrow} \hlstd{=} \hlkwd{c}\hlstd{(}\hlnum{2}\hlstd{,}\hlnum{5}\hlstd{))}
 \hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{10}\hlstd{)}
   \hlkwd{spatialPlot1}\hlstd{(take.basis[i, ],} \hlkwc{legend}\hlstd{=F)}
@@ -626,6 +626,115 @@ The last model component needed to calculate EPV are the transition probability 
 \texttt{tmat.ind} is a list with each element representing blocks (sub-matrices) of $\tilde{\mathbf{N}}$, the transition count matrix for $C_t$ given the players on the court (see Section 3.4 of the paper). The rows in each block represent the 14 \{\texttt{region}\} $\times$ \{defended\} states we use in $C_t$ for a given ballcarrier, as expalined in Section 2.2 of the paper. Columns in these blocks also represent such states, except for the \texttt{absorbs} block, where columns represent absorbing states in $\mathcal{C}_{\text{end}}$. Depending on the lineup used, different blocks will be used to construct $\mathbf{P}$. Also note, the \texttt{tmat.pos} object contains blocks used in calculating EPV-Added, as discussed in Section A.4 of the paper.
 
 \section{Calculating EPV}
+
+Given estimates of our parameters, EPV is calculated using Monte Carlo. The general idea, introduced in Section 3 of the paper, is to alternate draws from the micro- and macrotransition entry models until a macrotransition (pass, shot attempt, turnover) occurs. Then, given the predicted outcome of this macrotransition, we calculate EPV using the transition probability matrix of coarsened states. Before actually simulating EPV draws, it's useful to look at what the expected point values are of each coarsened state, as EPV will always be a weighted average of these values:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{hyper} \hlkwb{<-} \hlkwd{getHyperParams}\hlstd{(new.dat)} \hlcom{# makes sure all parameter inference is loaded}
+\hlstd{ev.out} \hlkwb{<-} \hlkwd{evLineups}\hlstd{(new.dat)} \hlcom{# coarsened state EVs for each offensive lineup in new.dat}
+\end{alltt}
+\begin{verbatim}
+## [1] "loading tmat 1 of 24"
+## [1] "loading tmat 2 of 24"
+## [1] "loading tmat 3 of 24"
+## [1] "loading tmat 4 of 24"
+## [1] "loading tmat 5 of 24"
+## [1] "loading tmat 6 of 24"
+## [1] "loading tmat 7 of 24"
+## [1] "loading tmat 8 of 24"
+## [1] "loading tmat 9 of 24"
+## [1] "loading tmat 10 of 24"
+## [1] "loading tmat 11 of 24"
+## [1] "loading tmat 12 of 24"
+## [1] "loading tmat 13 of 24"
+## [1] "loading tmat 14 of 24"
+## [1] "loading tmat 15 of 24"
+## [1] "loading tmat 16 of 24"
+## [1] "loading tmat 17 of 24"
+## [1] "loading tmat 18 of 24"
+## [1] "loading tmat 19 of 24"
+## [1] "loading tmat 20 of 24"
+## [1] "loading tmat 21 of 24"
+## [1] "loading tmat 22 of 24"
+## [1] "loading tmat 23 of 24"
+## [1] "loading tmat 24 of 24"
+\end{verbatim}
+
+
+{\ttfamily\noindent\color{warningcolor}{\#\# Warning in readChar(con, 5L, useBytes = TRUE): cannot open compressed file '/home/dan/xyhoops/XYHoops/dlc\_src/new/demo/data/tmats/NA.Rdata', probable reason 'No such file or directory'}}\begin{verbatim}
+## [1] "50 of 169"
+## [1] "100 of 169"
+## [1] "150 of 169"
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+% change "teammates.all" to "lineups"!
+In \texttt{ev.out}, \texttt{teammates.all} is a matrix of 5-man lineups that appear in \texttt{new.dat} (there may be duplicate rows). For instance, we have the starting 5 for the Miami Heat:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{lineup.ids} \hlkwb{<-} \hlstd{ev.out}\hlopt{$}\hlstd{teammates.all[}\hlnum{2}\hlstd{, ]}
+\hlstd{this.lineup} \hlkwb{<-} \hlstd{players[}\hlkwd{match}\hlstd{(lineup.ids, players}\hlopt{$}\hlstd{player_id), ]}
+\hlstd{this.lineup[,} \hlnum{2}\hlopt{:}\hlnum{4}\hlstd{]}
+\end{alltt}
+\begin{verbatim}
+##     player_id firstname lastname
+## 243    296572     Mario Chalmers
+## 238     61849    Dwyane     Wade
+## 236    214152    LeBron    James
+## 240    226806    Udonis   Haslem
+## 237    172631     Chris     Bosh
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+For each 5-man lineup, there are $5 \times 2 \text{ (defended or not) } \times 7 \text{ (court regions) } = 70$ coarsened state expected values. To check these for LeBron James' possession states, for instance,  we'd do:
+
+\begin{footnotesize}
+\begin{kframe}
+\begin{alltt}
+\hlstd{lineup.states} \hlkwb{<-} \hlkwd{paste}\hlstd{(}\hlkwd{rep}\hlstd{(this.lineup}\hlopt{$}\hlstd{lastname,} \hlkwc{each}\hlstd{=}\hlnum{14}\hlstd{), state_nms)} \hlcom{# state names}
+\hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(}\hlkwc{state}\hlstd{=lineup.states,} \hlkwc{EV}\hlstd{=ev.out}\hlopt{$}\hlstd{evs[[}\hlnum{2}\hlstd{]])[}\hlkwd{grep}\hlstd{(}\hlstr{"James"}\hlstd{, lineup.states), ],} \hlkwc{digits}\hlstd{=}\hlnum{2}\hlstd{)}
+\end{alltt}
+\end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
+% Sat Nov 14 12:43:25 2015
+\begin{table}[ht]
+\centering
+\begin{tabular}{rlr}
+  \hline
+ & state & EV \\ 
+  \hline
+29 & James behind-TRUE & 1.06 \\ 
+  30 & James per-TRUE & 1.03 \\ 
+  31 & James rest-TRUE & 1.42 \\ 
+  32 & James key-TRUE & 1.24 \\ 
+  33 & James cor3-TRUE & 1.09 \\ 
+  34 & James cen3-TRUE & 1.02 \\ 
+  35 & James other-TRUE & 0.99 \\ 
+  36 & James behind-FALSE & 1.05 \\ 
+  37 & James per-FALSE & 1.03 \\ 
+  38 & James rest-FALSE & 1.60 \\ 
+  39 & James key-FALSE & 1.34 \\ 
+  40 & James cor3-FALSE & 1.21 \\ 
+  41 & James cen3-FALSE & 1.03 \\ 
+  42 & James other-FALSE & 1.00 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+\end{footnotesize}
+
+These 
+
+
+
+
+
+
 
 
 

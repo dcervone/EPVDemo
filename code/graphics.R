@@ -28,6 +28,25 @@ data.plotter <- function(dat, ind, poss=F, ...) {
     points(x=pos.x, y=pos.y, pch=5, col="red", cex=3, lwd=2)
 }
 
+transformed.data.plotter <- function(dat, ind, ...) {
+  par(mar=c(1, 1, 1, 1))
+  plot(c(0, 47), c(0, 50), type="n", xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
+  draw.halfcourt(...)
+  pos.x <- dat[ind, "x"]
+  pos.y <- dat[ind, "y"]
+  for(i in 1:5) {
+    if(i < 5) {
+      text(dat[ind, c(sprintf("off%i_x", i), sprintf("off%i_y", i))], labels=i)
+      points(dat[ind, c(sprintf("off%i_x", i), sprintf("off%i_y", i))], cex=2.5, lwd=2)
+    }
+    text(dat[ind, c(sprintf("def%i_x", i), sprintf("def%i_y", i))], labels=i, col="purple")
+    points(dat[ind, c(sprintf("def%i_x", i), sprintf("def%i_y", i))], col="purple", cex=2.5, lwd=2)
+  }
+  points(dat[ind, c("ball_x", "ball_y")], col="orange", pch=20, cex=2)
+  text(dat[ind, c("x", "y")], labels=0)
+  points(dat[ind, c("x", "y")], pch=5, col="red", cex=3, lwd=2)
+}
+
 ## Court plotting utilities
 circle <- function(x, y, r, from=0, to=2*pi, lines=FALSE, ...) {
   theta <- seq(from, to, length=100)

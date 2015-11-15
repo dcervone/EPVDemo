@@ -115,7 +115,7 @@ getHyperParams <- function(datex) {
   # loads multiresolution transition model parameters for all players in datex
   inlas <- vector("list", length(inla.names))
   for(i in 1:length(inla.names)) {
-    print(sprintf("loading inla output %i of %i", i, length(inla.names)))
+    # print(sprintf("loading inla output %i of %i", i, length(inla.names)))
     load(sprintf("%s/INLA_%s.Rdata", data.dir, inla.names[i]))
     inlas[[i]] <- inla.out.lite
   }
@@ -126,7 +126,7 @@ getHyperParams <- function(datex) {
   for(i in 1:length(player.ids)) {
     pl <- player.ids[i]
     load(sprintf("%s/micros/%s.Rdata", data.dir, pl))
-    print(sprintf("loading micro %i out of %i", i, length(player.ids)))
+    # print(sprintf("loading micro %i out of %i", i, length(player.ids)))
     micro.inlas[[i]] <- list(with=with.ball, without=without.ball)
     macro.means[[i]] <- vector("list", length(inla.names))
     for(j in 1:length(inla.names)) {
@@ -243,7 +243,7 @@ evLineups <- function(datex, use.leagavg=0) {
   theses <- vector("list", nrow(teammates))
   for(i in 1:nrow(teammates.all)){
     if(i %% 50 == 0)
-      print(sprintf("%i of %i", i, nrow(teammates.all)))
+      # print(sprintf("%i of %i", i, nrow(teammates.all)))
     temp <- tryCatch(calcEV(tmats, teammates.all[i,], use.leagavg), error = function(e) e)
     if(!(inherits(temp, "error"))) 
       evs[[i]] <- temp 
@@ -372,7 +372,7 @@ allCalcs <- function(datex, hyper, micro.def.mod, ev.out, nmic=50) {
   for(i in 2:nmic) {
     print(sprintf("micro %i of %i", i, nmic))
     micro.out <- microDatex(micro.def.mod, hyper,
-                            datex,off.eps.x, off.eps.y,
+                            datex, off.eps.x, off.eps.y,
                             def.eps.x, def.eps.y)
     off.eps.x <- micro.out$off.eps.x
     off.eps.y <- micro.out$off.eps.y
@@ -381,6 +381,7 @@ allCalcs <- function(datex, hyper, micro.def.mod, ev.out, nmic=50) {
     datex.covars <- datexCovars(micro.out$datex)
     fv <- fvMatToDF(fitVals(hyper, micro.out$datex, datex.covars))
     fv.epv.list[[i]] <- fvToEPV(micro.out$datex, datex.covars, fv, ev.out)
+    datex <- micro.out$datex
   }
   return(fv.epv.list)
 }
@@ -569,7 +570,7 @@ microDatex <- function(micro.def.mod, hyper,
   datex[,c("def1_x", "def2_x", "def3_x", "def4_x", "def5_x")] <- def.new.x
   datex[,c("def1_y", "def2_y", "def3_y", "def4_y", "def5_y")] <- def.new.y
   datex[,"ndef"] <- getNdef(datex, "x", "y")
-  datex[, "eP"] <- entityPlace(datex[,"x"], datex[, "y"]) 
+  datex[, "eP"] <- getPlace(datex) 
   return(list(datex=datex, off.eps.x=off.eps.x, off.eps.y=off.eps.y, 
               def.eps.x=def.eps.x, def.eps.y=def.eps.y))
 }
@@ -584,7 +585,7 @@ teammatesRower <- function(id, teamrow){
 loadAllTmats <- function(ids) {
   tmats <- vector("list", length(ids))
   for(i in 1:length(ids)) {
-    print(sprintf("loading tmat %i of %i", i, length(ids)))
+    # print(sprintf("loading tmat %i of %i", i, length(ids)))
     if(is.na(ids[i])) {
       tmats[[i]] <- list(id=NA, tmat.ind=NULL, tmat.pos=NULL)
       next

@@ -150,7 +150,7 @@ paste(players$firstname, players$lastname)[which(H[this.player, ] == 1)]
 Similarly, let's load the basis functions that are used in representing the spatial effects in players' macrotransition entry models: we denote these basis functions $\phi_{ji}$, where $i=1, \ldots, 10$, and $j$ indexes shot-taking, four different pass options, and turnovers (recall that for the spatial effects in the shot probability model (Equation 10 in the paper), we use the same basis functions as we do for the shot-taking hazard model). To recreate Figure 6 of the paper, which plots the shot-taking bases, we'd do:
 
 <<shot_bases, fig.width=6, fig.height=2.4, fig.cap='Shot-taking spatial bases; this plot is the same as Figure 6 of the paper (though the ordering is different).'>>=
-source(sprintf("%s/model_util.R", code.dir))
+source(sprintf("%s/model_util.R", code.dir)) # loads many modeling functions
 par(mfrow = c(2,5))
 for(i in 1:10)
   spatialPlot1(take.basis[i, ], legend=F)
@@ -292,14 +292,39 @@ names(tmat.ind)
 
 \section{Calculating EPV}
 
-<<EPV_draw>>=
-source(sprintf("%s/model_util.R", code.dir))
-hyper <- getHyperParams(new.dat)
-ev.out <- evLineups(new.dat)
+Given estimates of our parameters, EPV is calculated using Monte Carlo. The general idea, introduced in Section 3 of the paper, is to alternate draws from the micro- and macrotransition entry models until a macrotransition (pass, shot attempt, turnover) occurs. Then, given the predicted outcome of this macrotransition, we calculate EPV using the transition probability matrix of coarsened states. Before actually simulating EPV draws, it's useful to look at what the expected point values are of each coarsened state, as EPV will always be a weighted average of these values:
 
-fv.epv.list <- allCalcs(new.dat, hyper, def.micro, ev.out, nmic=5)
-
+<<load_all_hyper>>=
+hyper <- getHyperParams(new.dat) # makes sure all parameter inference is loaded
+ev.out <- evLineups(new.dat) # coarsened state EVs for each offensive lineup in new.dat
 @
+
+% change "teammates.all" to "lineups"!
+In \texttt{ev.out}, \texttt{teammates.all} is a matrix of 5-man lineups that appear in \texttt{new.dat} (there may be duplicate rows). For instance, we have the starting 5 for the Miami Heat:
+
+<<heat_lineup>>=
+lineup.ids <- ev.out$teammates.all[2, ]
+this.lineup <- players[match(lineup.ids, players$player_id), ]
+this.lineup[, 2:4]
+@
+
+For each 5-man lineup, there are $5 \times 2 \text{ (defended or not) } \times 7 \text{ (court regions) } = 70$ coarsened state expected values. To check these for LeBron James' possession states, for instance,  we'd do:
+
+\begin{footnotesize}
+<<lebron_state_evs, results="asis">>=
+lineup.states <- paste(rep(this.lineup$lastname, each=14), state_nms) # state names
+xtable(data.frame(state=lineup.states, EV=ev.out$evs[[2]])[grep("James", lineup.states), ], digits=2)
+@
+\end{footnotesize}
+
+These results seem pretty sensible, as, for instance, EVs are uniformly higher for uncontested states, with the difference especially great within the restricted area (1.60 versus 1.42) and corner 3 (1.21 versus 1.09). Note that with different teammates, we would see slightly different EVs for these states.
+
+% problem with epv.now / other states
+% problem with "make" values not averaging over 2s/3s.
+
+
+
+
 
 
 
