@@ -367,7 +367,7 @@ allCalcs <- function(datex, hyper, micro.def.mod, ev.out, nmic=50, save.position
   fv.epv.list <- vector("list", nmic)
   positions <- vector("list", nmic)
   if(save.positions) {
-    positions[[i]] <- list(off.x=off.x, off.y=off.y, def.x=def.x, def.y=def.y)
+    positions[[1]] <- list(off.x=off.x, off.y=off.y, def.x=def.x, def.y=def.y)
   }
   
   datex.covars <- datexCovars(datex)

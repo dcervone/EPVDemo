@@ -20,8 +20,8 @@ def.micro <- microDefModel(new.dat)
 hyper <- getHyperParams(new.dat)
 ev.out <- evLineups(new.dat)
   
-fv.epv.list <- allCalcs(new.dat, hyper, def.micro, ev.out, nmic=50)
-save(fv.epv.list, file="fv.epv.list.Rdata")
+draw.out <- allCalcs(new.dat, hyper, def.micro, ev.out, nmic=5, save.positions=FALSE)
+# save(fv.epv.list, file="fv.epv.list.Rdata")
 epv <- compressEPV(new.dat, fv.epv.list)
 
 dir.create(sprintf("%s/EPVdraws/", data.dir))
