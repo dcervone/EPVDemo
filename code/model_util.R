@@ -349,7 +349,7 @@ fvMatToDF <- function(fv) {
   return(fv)
 }
 
-allCalcs <- function(datex, hyper, micro.def.mod, ev.out, nmic=50) {
+allCalcs <- function(datex, hyper, micro.def.mod, ev.out, nmic=50, save.positions=FALSE) {
   off.x <- as.matrix(datex[,c("x", "off1_x", "off2_x", "off3_x", "off4_x")])
   off.y <- as.matrix(datex[,c("y", "off1_y", "off2_y", "off3_y", "off4_y")])
   off.eps.x <- rbind(rep(0, 5), off.x[-1, ] - off.x[-nrow(off.x), ])
@@ -365,6 +365,10 @@ allCalcs <- function(datex, hyper, micro.def.mod, ev.out, nmic=50) {
   def.eps.y[which(abs(def.eps.y) > 2, arr.ind=T)] <- 0
   
   fv.epv.list <- vector("list", nmic)
+  positions <- vector("list", nmic)
+  if(save.positions) {
+    positions[[i]] <- list(off.x=off.x, off.y=off.y, def.x=def.x, def.y=def.y)
+  }
   
   datex.covars <- datexCovars(datex)
   fv <- fvMatToDF(fitVals(hyper, datex, datex.covars))
@@ -378,12 +382,20 @@ allCalcs <- function(datex, hyper, micro.def.mod, ev.out, nmic=50) {
     off.eps.y <- micro.out$off.eps.y
     def.eps.x <- micro.out$def.eps.x
     def.eps.y <- micro.out$def.eps.y
+    if(save.positions) {
+      off.x <- off.x + off.eps.x
+      off.y <- off.y + off.eps.y
+      def.x <- def.x + def.eps.x
+      def.y <- def.y + def.eps.y
+      positions[[i]] <- list(off.x=off.x, off.y=off.y, def.x=def.x, def.y=def.y)
+    }
+    
     datex.covars <- datexCovars(micro.out$datex)
     fv <- fvMatToDF(fitVals(hyper, micro.out$datex, datex.covars))
     fv.epv.list[[i]] <- fvToEPV(micro.out$datex, datex.covars, fv, ev.out)
     datex <- micro.out$datex
   }
-  return(fv.epv.list)
+  return(list(fv.epv.list=fv.epv.list, positions=positions))
 }
 
 compressEPV <- function(datex, fv.epv.list) {

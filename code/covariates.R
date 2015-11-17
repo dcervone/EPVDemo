@@ -27,9 +27,10 @@ getVeloc <- function(dat) {
 
 #indicator for has a dribble happened on this possession?
 getDrib <- function(dat) {
-  thesediff <- diff(dat$time)
-  ends <- c(which(thesediff < 0 | thesediff > 100), nrow(dat))
-  starts <- c(1, which(thesediff < 0 | thesediff > 100) + 1)
+  time.diff <- diff(dat$time)
+  ent.diff <- diff(dat$entity)
+  ends <- c(which(time.diff < 0 | time.diff > 100 | ent.diff != 0), nrow(dat))
+  starts <- c(1, which(time.diff < 0 | time.diff > 100 | ent.diff != 0) + 1)
   posses <- lapply(1:length(starts), function(i) starts[i]:ends[i])
   
   dribble <- rep(0, nrow(dat))
@@ -49,7 +50,10 @@ getBallDist <- function(dat) {
   ball.vy <- c(0,diff(dat$ball_y) / diff(dat$time)) * 1000
   ball.vz <- c(0,diff(dat$ball_z) / diff(dat$time)) * 1000
   ball.sp <- sqrt(ball.vx^2 + ball.vy^2 + ball.vz^2)
-  ball.lastsec <- c(rep(0, 25), sapply(1:(nrow(dat) - 25), function(i) mean(ball.sp[i + 1:25])))
+  bads <- which(ball.sp > 100)
+  if(length(bads) > 0)
+    ball.sp[bads] <- NA
+  ball.lastsec <- c(rep(0, 25), sapply(1:(nrow(dat) - 25), function(i) mean(ball.sp[i + 0:24], na.rm=T)))
   return(ball.lastsec)
 }
 
