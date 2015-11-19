@@ -137,7 +137,7 @@ getHyperParams <- function(datex) {
       cov.inds <- setdiff(seq(length(inlas[[j]]$summary.random)), basis.inds)
       y.rand <- c(inlas[[j]]$summary.random$p.int[id.n, "mean"], 
                   sapply(cov.inds, 
-                         function(k) inlas[[j]]$summary.random[[k]][1, "mean"]),
+                         function(k) inlas[[j]]$summary.random[[k]][id.n, "mean"]),
                   inlas[[j]]$summary.random$p.b1[id.n + nrow(players) * (1:n.basis), "mean"])
       macro.means[[i]][[j]] <- y.fix + y.rand
     }
