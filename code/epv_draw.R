@@ -17,6 +17,9 @@ load(sprintf("%s/new.dat.Rdata", data.dir))
 
 def.micro <- microDefModel(new.dat)
 
+these <- which(new.dat$quarter == 2 & new.dat$game_clock < 330 & new.dat$game_clock > 230)
+
+new.dat <- new.dat[these, ]
 hyper <- getHyperParams(new.dat)
 ev.out <- evLineups(new.dat)
   

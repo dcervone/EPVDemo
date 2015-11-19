@@ -68,7 +68,7 @@ microDefModel <- function(datex) {
   off.x <- as.matrix(datex[, c("x", "off1_x", "off2_x", "off3_x", "off4_x")])
   opts.x <- datex$ball_x * .27 + off.x * .62 + 4.75 * .11
   off.y <- as.matrix(datex[,c("y", "off1_y", "off2_y", "off3_y", "off4_y")])
-  opts.y <- datex$ball_y * .27 + off.y * .62 + 50 * .11
+  opts.y <- datex$ball_y * .27 + off.y * .62 + 25 * .11
   def.x <- as.matrix(datex[, c("def1_x", "def2_x", "def3_x", "def4_x", "def5_x")])
   def.y <- as.matrix(datex[, c("def1_y", "def2_y", "def3_y", "def4_y", "def5_y")])
   
@@ -119,7 +119,8 @@ getHyperParams <- function(datex) {
     load(sprintf("%s/INLA_%s.Rdata", data.dir, inla.names[i]))
     inlas[[i]] <- inla.out.lite
   }
-  player.ids <- unique(as.vector(datex$entity))
+  player.ids <- unique(unlist(datex[, c("entity", sapply(1:4, function(q) sprintf("off%i_ent", q)),
+                                           sapply(1:5, function(q) sprintf("def%i_ent", q)))]))
   player.ids <- player.ids[which(player.ids > 0)]
   micro.inlas <- vector("list",  length(player.ids))
   macro.means <- vector("list",  length(player.ids))
@@ -383,10 +384,11 @@ allCalcs <- function(datex, hyper, micro.def.mod, ev.out, nmic=50, save.position
     def.eps.x <- micro.out$def.eps.x
     def.eps.y <- micro.out$def.eps.y
     if(save.positions) {
-      off.x <- off.x + off.eps.x
-      off.y <- off.y + off.eps.y
-      def.x <- def.x + def.eps.x
-      def.y <- def.y + def.eps.y
+      off.x <- as.matrix(micro.out$datex[,c("x", "off1_x", "off2_x", "off3_x", "off4_x")])
+      off.y <- as.matrix(micro.out$datex[,c("y", "off1_y", "off2_y", "off3_y", "off4_y")])
+      
+      def.x <- as.matrix(micro.out$datex[,c("def1_x", "def2_x", "def3_x", "def4_x", "def5_x")])
+      def.y <- as.matrix(micro.out$datex[,c("def1_y", "def2_y", "def3_y", "def4_y", "def5_y")])
       positions[[i]] <- list(off.x=off.x, off.y=off.y, def.x=def.x, def.y=def.y)
     }
     
@@ -533,7 +535,7 @@ microDatex <- function(micro.def.mod, hyper,
   mod.y <- micro.def.mod$mod.y
   
   opts.x <- datex$ball_x*.27 + off.x*.62 + 4.75*.11
-  opts.y <- datex$ball_y*.27 + off.y*.62 + 50*.11
+  opts.y <- datex$ball_y*.27 + off.y*.62 + 25*.11
   def.x <- as.matrix(datex[,c("def1_x", "def2_x", "def3_x", "def4_x", "def5_x")])
   def.y <- as.matrix(datex[,c("def1_y", "def2_y", "def3_y", "def4_y", "def5_y")])
   
@@ -554,7 +556,7 @@ microDatex <- function(micro.def.mod, hyper,
   off.new.y <- cbind(off.new.y.0, off.new.y.1, off.new.y.2, off.new.y.3, off.new.y.4)
   
   new.opts.x <- datex$ball_x*.27 + off.new.x*.62 + 4.75*.11
-  new.opts.y <- datex$ball_y*.27 + off.new.y*.62 + 4.75*.11
+  new.opts.y <- datex$ball_y*.27 + off.new.y*.62 + 25*.11
   
   def.new.x <- mod.x$coef[1] + def.x + 
     mod.x$coef[2]*def.eps.x + 
@@ -571,16 +573,28 @@ microDatex <- function(micro.def.mod, hyper,
   
   def.eps.x <- def.new.x - def.x
   def.eps.y <- def.new.y - def.y
+  off.eps.x <- off.new.x - off.x
+  off.eps.y <- off.new.y - off.y
   
-  off.new.x[which(off.new.x < 0)] <- 0
-  off.new.y[which(off.new.y < 0)] <- 0
-  def.new.x[which(def.new.x < 0)] <- 0
-  def.new.y[which(def.new.y < 0)] <- 0
+  off.new.x[which(off.new.x < 0, arr.ind=T)] <- 0
+  off.new.y[which(off.new.y < 0, arr.ind=T)] <- 0
+  def.new.x[which(def.new.x < 0, arr.ind=T)] <- 0
+  def.new.y[which(def.new.y < 0, arr.ind=T)] <- 0
+  off.new.x[which(off.new.x > 94, arr.ind=T)] <- 94
+  off.new.y[which(off.new.y > 50, arr.ind=T)] <- 50
+  def.new.x[which(def.new.x > 94, arr.ind=T)] <- 94
+  def.new.y[which(def.new.y > 50, arr.ind=T)] <- 50
+  
+  ball.new.x <- datex$ball_x + off.eps.x[, 1]
+  ball.new.y <- datex$ball_y + off.eps.y[, 1]
+  
   
   datex[,c("x", "off1_x", "off2_x", "off3_x", "off4_x")] <- off.new.x
   datex[,c("y", "off1_y", "off2_y", "off3_y", "off4_y")] <- off.new.y
   datex[,c("def1_x", "def2_x", "def3_x", "def4_x", "def5_x")] <- def.new.x
   datex[,c("def1_y", "def2_y", "def3_y", "def4_y", "def5_y")] <- def.new.y
+  datex[, "ball_x"] <- ball.new.x
+  datex[, "ball_y"] <- ball.new.y
   datex[,"ndef"] <- getNdef(datex, "x", "y")
   datex[, "eP"] <- getPlace(datex) 
   threept.out <- getThree(datex)
