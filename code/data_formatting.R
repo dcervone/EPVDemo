@@ -1,3 +1,9 @@
+# **********************
+#
+# Format moments data into offensive possession halfcourt data, better structure for modeling
+#
+# **********************
+
 # mark events from list "ev" indicating ball possession
 poss.foo <- function(dat, poss, ev, next0=FALSE) {
   for(i in 1:5) {
@@ -30,7 +36,7 @@ zero.foo <- function(dat, poss, ev, next0=FALSE) {
 
 # create variable tracking which entity is ballcarrier
 possession.indicator <- function(dat) {
-  #eliminate 25 and 3 simultaneous tags
+  # eliminate 25 and 3 simultaneous tags
   mult.events <- which(rowSums(!is.na(dat[, grep("event", names(dat))])) > 1)
   if(length(mult.events) > 0) {
     assists <- which(dat[mult.events, grep("event", names(dat))] == 25, arr.ind=T)
@@ -67,7 +73,7 @@ possession.indicator <- function(dat) {
       temp <- dat[idx.start[test[i]], grep("event", names(dat))]
       pos.pl <- substr(names(temp)[which(!is.na(temp))], 1, 2)
       pos.x <- as.numeric(as.vector(dat[inds, paste0(pos.pl, "_x")]))
-      pos.y <- as.numeric(as.vector(dat[inds, paste0(pos.pl, "_x")]))
+      pos.y <- as.numeric(as.vector(dat[inds, paste0(pos.pl, "_y")]))
       ball.x <- as.numeric(as.vector(dat[inds, "x"]))
       ball.y <- as.numeric(as.vector(dat[inds, "y"]))
       dist <- sqrt((pos.x - ball.x)^2 + (pos.y - ball.y)^2)
@@ -195,12 +201,12 @@ rearrange.data <- function(dat, poss) {
                                       dat[pl.inds, paste0(op.team, "4_event")],
                                       dat[pl.inds, paste0(op.team, "5_event")])
   }
-  new.dat <- data.frame(dat[, c("game", "time", "quarter", "shot_clock", "game_clock",
+  tdat <- data.frame(dat[, c("game", "time", "quarter", "shot_clock", "game_clock",
                                       "x", "y", "z")],
                           entity, team, x, y, event_id, 
                           off.ent.mat, off.x.mat, off.y.mat, off.event.mat,
                           def.ent.mat, def.x.mat, def.y.mat, def.event.mat)
-  names(new.dat) <- c("game", "time", "quarter", "shot_clock", "game_clock",
+  names(tdat) <- c("game", "time", "quarter", "shot_clock", "game_clock",
                         "ball_x", "ball_y", "ball_z", "entity", "team",
                         "x", "y", "event_id", 
                         sapply(1:4, function(v) sprintf("off%s_ent", v)),
@@ -213,22 +219,22 @@ rearrange.data <- function(dat, poss) {
                         sapply(1:5, function(v) sprintf("def%s_event", v)))
 
   for(i in 1:4) {
-    new.dat[, sprintf("off%i_x", i)] <- as.numeric(as.vector(new.dat[, sprintf("off%i_x", i)]))
-    new.dat[, sprintf("off%i_y", i)] <- as.numeric(as.vector(new.dat[, sprintf("off%i_y", i)]))
+    tdat[, sprintf("off%i_x", i)] <- as.numeric(as.vector(tdat[, sprintf("off%i_x", i)]))
+    tdat[, sprintf("off%i_y", i)] <- as.numeric(as.vector(tdat[, sprintf("off%i_y", i)]))
   }
   for(i in 1:5) {
-    new.dat[, sprintf("def%i_x", i)] <- as.numeric(as.vector(new.dat[, sprintf("def%i_x", i)]))
-    new.dat[, sprintf("def%i_y", i)] <- as.numeric(as.vector(new.dat[, sprintf("def%i_y", i)]))
+    tdat[, sprintf("def%i_x", i)] <- as.numeric(as.vector(tdat[, sprintf("def%i_x", i)]))
+    tdat[, sprintf("def%i_y", i)] <- as.numeric(as.vector(tdat[, sprintf("def%i_y", i)]))
   }
-  new.dat[, "x"] <- as.numeric(as.vector(new.dat[, "x"]))
-  new.dat[, "y"] <- as.numeric(as.vector(new.dat[, "y"]))
-  new.dat[, "ball_x"] <- as.numeric(as.vector(new.dat[, "ball_x"]))
-  new.dat[, "ball_y"] <- as.numeric(as.vector(new.dat[, "ball_y"]))
-  new.dat[, "ball_z"] <- as.numeric(as.vector(new.dat[, "ball_z"]))
+  tdat[, "x"] <- as.numeric(as.vector(tdat[, "x"]))
+  tdat[, "y"] <- as.numeric(as.vector(tdat[, "y"]))
+  tdat[, "ball_x"] <- as.numeric(as.vector(tdat[, "ball_x"]))
+  tdat[, "ball_y"] <- as.numeric(as.vector(tdat[, "ball_y"]))
+  tdat[, "ball_z"] <- as.numeric(as.vector(tdat[, "ball_z"]))
   rm(off.ent.mat, off.x.mat, off.y.mat, off.event.mat,
      def.ent.mat, def.x.mat, def.y.mat, def.event.mat)
   gc()
-  return(new.dat)
+  return(tdat)
 }
 
 # flip data to offensive halfcourt
@@ -254,3 +260,20 @@ offensive.halfcourt <- function(dat) {
   return(dat)
 }
 
+# subset to only plays where ballcarrier in offensive halfcourt
+# and clock is moving
+offensive.ballcarrier <- function(dat) {
+  in.play.indicator <- dat$x < 47 & dat$x > 0 & dat$y < 50 & dat$y > 0
+  clock.diff <- c(0, diff(dat$game_clock))
+  clock.moving.indicator <- clock.diff < -.01 & clock.diff > -.1
+  goods <- which(in.play.indicator & clock.moving.indicator)
+  return(dat[goods, ])
+}
+
+# ID for each player-touch sequence
+get.touchID <- function(dat) {
+  ent.diff <- diff(dat$entity)
+  clock.diff <- diff(dat$game_clock)
+  new.entity <- c(1, as.numeric(ent.diff != 0 | abs(clock.diff) > .1))
+  touchID <- cumsum(new.entity)
+}

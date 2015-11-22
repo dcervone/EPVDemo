@@ -17,7 +17,7 @@ Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basket
 \maketitle
 
 <<chunk_opts, include=F>>=
-opts_chunk$set(size="footnotesize", cache=T, message=F,
+opts_chunk$set(size="footnotesize", cache=F, message=F,
                fig.lp='fig:', fig.pos='H', fig.align='center')
 @
 
@@ -65,7 +65,8 @@ Column & Value & Notes \\
 Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plot_data}.
 
 <<plot_data, fig.width=5.6, fig.height=3, fig.cap='Plotting a single moment of optical tracking data.'>>=
-source(sprintf("%s/graphics.R", code.dir))
+source(sprintf("%s/constants.R", code.dir)) # loads libraries and constants used throughout code
+source(sprintf("%s/graphics.R", code.dir))  # graphics/plotting functions
 par(mar=rep(0, 4))
 data.plotter(dat, 1800)
 @
@@ -79,17 +80,19 @@ source(sprintf("%s/data_formatting.R", code.dir))
 source(sprintf("%s/covariates.R", code.dir))
 
 poss <- possession.indicator(dat) # infer ballcarrier... takes about a minute
-new.dat <- rearrange.data(dat, poss) # re-shuffle columns by to ballcarrier... (2 min)
-new.dat <- offensive.halfcourt(new.dat) # transforming to offensive halfcourt
-covariates <- getAllCovars(new.dat) # get covariates... (3 min)
-new.dat <- data.frame(new.dat, covariates)
-save(new.dat, file=sprintf("%s/new.dat.Rdata", data.dir))
+tdat <- rearrange.data(dat, poss) # re-shuffle columns by to ballcarrier... (2 min)
+tdat <- offensive.halfcourt(tdat) # transforming to offensive halfcourt
+tdat <- offensive.ballcarrier(tdat)
+touchID <- get.touchID(tdat)
+covariates <- getAllCovars(tdat) # get covariates... (3 min)
+tdat <- data.frame(tdat, touchID=touchID, covariates)
+save(tdat, file=sprintf("%s/tdat.Rdata", data.dir))
 @
 
-Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
+Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{tdat}:
 
 <<load_transformed_data>>=
-load(sprintf("%s/new.dat.Rdata", data.dir))
+load(sprintf("%s/tdat.Rdata", data.dir))
 @
 
 \section{Components of hierarchical models}
@@ -156,7 +159,6 @@ paste(players$firstname, players$lastname)[which(H[this.player, ] == 1)]
 Similarly, let's load the basis functions that are used in representing the spatial effects in players' macrotransition entry models: we denote these basis functions $\phi_{ji}$, where $i=1, \ldots, 10$, and $j$ indexes shot-taking, four different pass options, and turnovers (recall that for the spatial effects in the shot probability model (Equation 10 in the paper), we use the same basis functions as we do for the shot-taking hazard model). To recreate Figure 6 of the paper, which plots the shot-taking bases, we'd do:
 
 <<shot_bases, fig.width=6, fig.height=2.4, fig.cap='Shot-taking spatial bases; this plot is the same as Figure 6 of the paper (though the ordering is different).'>>=
-source(sprintf("%s/model_util.R", code.dir)) # loads many modeling functions
 par(mfrow = c(2,5))
 for(i in 1:10)
   spatialPlot1(take.basis[i, ], legend=F)
@@ -187,7 +189,8 @@ The defensive microtransition model is less complicated, and we can fit it very 
 
 \begin{footnotesize}
 <<def_micro, results="asis">>=
-def.micro <- microDefModel(new.dat)
+source(sprintf("%s/parameters.R", code.dir)) # loads many modeling functions
+def.micro <- microDefModel(tdat)
 # coefficients are a_x, c_x, and b_x from Equation 6 in paper
 xtable(summary(def.micro$mod.x)$coef[, 1:3])
 @
@@ -308,12 +311,12 @@ names(tmat.ind)
 Given estimates of our parameters, EPV is calculated using Monte Carlo. The general idea, introduced in Section 3 of the paper, is to alternate draws from the micro- and macrotransition entry models until a macrotransition (pass, shot attempt, turnover) occurs. Then, given the predicted outcome of this macrotransition, we calculate EPV using the transition probability matrix of coarsened states. Before actually simulating EPV draws, it's useful to look at what the expected point values are of each coarsened state, as EPV will always be a weighted average of these values:
 
 <<load_all_hyper>>=
-hyper <- getHyperParams(new.dat) # makes sure all parameter inference is loaded
-ev.out <- evLineups(new.dat) # coarsened state EVs for each offensive lineup in new.dat
+hyper <- getHyperParams(tdat) # makes sure all parameter inference is loaded
+ev.out <- evLineups(tdat) # coarsened state EVs for each offensive lineup in tdat
 @
 
 % change "teammates.all" to "lineups"!
-In \texttt{ev.out}, \texttt{teammates.all} is a matrix of 5-man lineups that appear in \texttt{new.dat} (there may be duplicate rows). For instance, we have the starting 5 for the Miami Heat:
+In \texttt{ev.out}, \texttt{teammates.all} is a matrix of 5-man lineups that appear in \texttt{tdat} (there may be duplicate rows). For instance, we have the starting 5 for the Miami Heat:
 
 <<heat_lineup>>=
 lineup.ids <- ev.out$teammates.all[2, ]
@@ -334,11 +337,8 @@ These results seem pretty sensible, as, for instance, EVs are uniformly higher f
 
 \subsection{EPV curves}
 
-% problem with epv.now / other states
-% problem with "make" values not averaging over 2s/3s.
-
-
-
+% Define "touch ID" for each player touch sequence
+% Define "possession ID" starting with first touch of new team and continuing until clock stop or new team possession
 
 
 

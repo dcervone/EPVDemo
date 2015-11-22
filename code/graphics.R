@@ -1,17 +1,59 @@
-library(RColorBrewer)
-library(fields)
+# **********************
+#
+# Plotting functions
+#
+# **********************
 
-data.plotter <- function(dat, ind, poss=F, ...) {
-  par(mar=c(1, 1, 1, 1))
+players.plotter <- function(dat, ind) {
+  # plots player legend
+  par(mar=c(0,0,0,0), xpd=NA)
+  plot(c(0, 1), c(0, 4.5), type="n", xlab="", ylab="", bty="n", xaxt="n", yaxt="n")
+  for(i in 1:5) {
+    h.nm <- paste(players$firstname, players$lastname)[match(dat[ind, sprintf("h%i_ent", i)], players$player_id)]
+    a.nm <- paste(players$firstname, players$lastname)[match(dat[ind, sprintf("a%i_ent", i)], players$player_id)]
+    text(0, 5 - i / 2, labels=i, cex=2)
+    points(0, 5 - i / 2, cex=4.5, lwd=2)
+    text(.1, 5 - i/2, labels=h.nm, cex=1.25, adj=c(0,0.5))
+    text(0, 2.5 - i/2, labels=i, col="#98002E", cex=2)
+    points(0, 2.5 - i/2, cex=4.5, col="#98002E", lwd=2)
+    text(.1, 2.5 - i/2, labels=a.nm, col="#98002E", cex=1.25, adj=c(0,0.5))
+  }
+}
+
+epv.plotter <- function(dat, ind, inds=NULL) {
+  # plots EPV ticker
+  if(is.null(inds)) {
+    pid <- dat$possession.id[ind]
+    inds <- which(dat$possession.id == pid)
+  }
+  x <- (720 - dat$game_clock[inds])
+  y <- dat$epv.smooth[inds]
+  par(mar=c(0, 3, 1, 0), xpd=NA)
+  plot(x, seq(.5, 1.5, l=length(x)), type="n",
+       xlab="", ylab="", yaxt="n", xaxt="n", bty="n", main="EPV")
+  for(val in seq(.5, 1.5, .25))
+    lines(range(x), rep(val, 2), lwd=0.2)
+  axis(side=2, at=seq(.5, 1.5, .25), las=1, cex.axis=1)
+  # mtext("time", side=1)
+  for(i in 1:match(ind, inds)) {
+    lines(x[1:i], y[1:i], col="red")
+    points(x[i], y[i], pch=20, col="red")
+  }    
+}
+
+
+data.plotter <- function(dat, ind, poss=F, legend=F, ...) {
+  # plots player locations on court
+  par(mar=c(0, 0, 0, 0))
   plot(c(0, 94), c(0, 50), type="n", xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
   draw.fullcourt(...)
   pos.x <- dat[ind, "x"]
   pos.y <- dat[ind, "y"]
   for(i in 1:5) {
-    text(dat[ind, c(sprintf("h%i_x", i), sprintf("h%i_y", i))], labels=i)
-    points(dat[ind, c(sprintf("h%i_x", i), sprintf("h%i_y", i))], cex=2.5, lwd=2)
-    text(dat[ind, c(sprintf("a%i_x", i), sprintf("a%i_y", i))], labels=i, col="purple")
-    points(dat[ind, c(sprintf("a%i_x", i), sprintf("a%i_y", i))], col="purple", cex=2.5, lwd=2)
+    text(dat[ind, c(sprintf("h%i_x", i), sprintf("h%i_y", i))], labels=i, cex=2)
+    points(dat[ind, c(sprintf("h%i_x", i), sprintf("h%i_y", i))], cex=4.5, lwd=2)
+    text(dat[ind, c(sprintf("a%i_x", i), sprintf("a%i_y", i))], labels=i, col="#98002E", cex=2)
+    points(dat[ind, c(sprintf("a%i_x", i), sprintf("a%i_y", i))], col="#98002E", cex=4.5, lwd=2)
     if(!(poss))
       next
     if(dat[ind, sprintf("h%i_ent", i)] == dat[ind, "poss"]) {
@@ -23,12 +65,28 @@ data.plotter <- function(dat, ind, poss=F, ...) {
       pos.y <- dat[ind, sprintf("a%i_y", i)]
     }
   }
-  points(dat[ind, c("x", "y")], col="orange", pch=20, cex=2)
+  points(dat[ind, c("x", "y")], col="orange", pch=20, cex=3)
   if(poss)
-    points(x=pos.x, y=pos.y, pch=5, col="red", cex=3, lwd=2)
+    points(x=pos.x, y=pos.y, pch=5, col="#9ECAE1", cex=5, lwd=3)
+}
+
+full.plotter <- function(dat, ind, poss=F, legend=F, epv=F, inds=NULL, ...) {
+  # can plot player locations, legend, and EPV ticker
+  par(mar=rep(0,4))
+  if(legend & !(epv)) {
+    layout(matrix(c(1,2), nrow=1), widths=c(.85, .15))
+  } else if(legend & epv) {
+    layout(matrix(c(1,3,2,2), nrow=2), widths=c(.85, .15, .85), heights=c(.34, 1, .66))
+  } 
+  if(epv)
+    epv.plotter(dat, ind, inds)
+  if(legend)
+    players.plotter(dat, ind)
+  data.plotter(dat, ind, poss, legend, ...)
 }
 
 transformed.data.plotter <- function(dat, ind, ...) {
+  # for use on 'tdat' formatted data
   par(mar=c(1, 1, 1, 1))
   plot(c(0, 47), c(0, 50), type="n", xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
   draw.halfcourt(...)
@@ -94,6 +152,7 @@ draw.fullcourt <- function(...) {
 
 colo <- colorRampPalette(c("white", "#91CF60", "yellow", "red"))
 spatialPlot0 <- function(z, cexy=0.5, legend=TRUE, ...) {
+  # spatial effect plot: no basis transformation
   par(mar=c(0.0,0.0,0.0,0.0))
   if(legend) {
     image.plot(seq(0, 47, l=23), seq(0, 50, l=25), matrix(z, nrow=23, ncol=25),
@@ -106,6 +165,7 @@ spatialPlot0 <- function(z, cexy=0.5, legend=TRUE, ...) {
 }
 
 spatialPlot1 <- function(z, pts1=NULL, pts0=NULL, cexy=0.5, legend=TRUE, ...) {
+  # spatial effect plot: basis transformation
   par(mar=c(0.0,0.0,0.0,0.0))
   goods <- which(mesh$loc[, 1] >= 0 & mesh$loc[, 1] <= 47 & mesh$loc[, 2] >= 0 & mesh$loc[, 2] <= 50)
   if(legend) {
@@ -123,6 +183,7 @@ spatialPlot1 <- function(z, pts1=NULL, pts0=NULL, cexy=0.5, legend=TRUE, ...) {
 }
 
 spatialPlot2 <- function(z1, z2, pts1=NULL, pts2=pts1, cexy=0.5, legend=TRUE, ...) {
+  # side-by-side spatial effects plot
   par(mar=c(0.1,0.5,0.1,0.5))
   par(mfrow=c(1,2))
   goods <- which(mesh$loc[, 1] >= 0 & mesh$loc[, 1] <= 47 & mesh$loc[, 2] >= 0 & mesh$loc[, 2] <= 50)
@@ -153,6 +214,7 @@ spatialPlot2 <- function(z1, z2, pts1=NULL, pts2=pts1, cexy=0.5, legend=TRUE, ..
 
 
 vectorPlot <- function(io, ...){
+  # spatial acceleration field plot
   mesh.proj <- inla.mesh.projector(mesh, dims=c(40,40))
   v.x <- inla.mesh.project(mesh.proj, io$io.x$summary.random$spatial$mean)
   v.y <- inla.mesh.project(mesh.proj, io$io.y$summary.random$spatial$mean)

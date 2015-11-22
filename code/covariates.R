@@ -1,5 +1,8 @@
-#MAKE COVARIATES!!!
-#dat is a data file output by transitions_clean_data
+# **********************
+#
+# Generate spatiotemporal covariates used in multiresolution transition models
+#
+# **********************
 
 #distance to nearest defender
 getNdef <- function(dat, colx, coly) {
