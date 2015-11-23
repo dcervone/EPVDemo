@@ -122,6 +122,8 @@ fitVals <- function(hyper, tdat, tdat.covars) {
   for (i in 1:length(inla.names)) {
     for(j in na.omit(unique(off0.idx))) {
       inds <- which(off0.idx == j)
+      if(length(inds) <= 1)
+        next
       dat.fix <- tdat.covars$dat.fix[[i]][inds, ]
       dat.spat <- tdat.covars$dat.spat[[i]][inds, ]
       y <- hyper$macro.means[[j]][[i]]
