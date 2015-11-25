@@ -10,7 +10,7 @@ library(matrixStats)
 library(INLA)
 library(RColorBrewer)
 library(fields)
-
+library(animation)
 
 #Creates functional basis "mesh"
 mesh_boundary <- inla.mesh.segment(matrix(c(0,0, 47,0, 47,50, 0,50), 4, 2, byrow=T))

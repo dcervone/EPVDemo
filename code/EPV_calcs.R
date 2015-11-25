@@ -443,150 +443,75 @@ microtdat <- function(micro.def.mod, hyper,
               def.eps.x=def.eps.x, def.eps.y=def.eps.y))
 }
 
-# is this function below necessary??? pls no
-doEPV <- function(tmats, use.leagavg=0, fullres=TRUE){
-  evs <- list()
-  for(i in 1:nrow(teammates.all)){
-    # if(i %% 50 == 0)
-    #   print(sprintf("%i of %i", i, nrow(teammates.all)))
-    temp <- tryCatch(calcEV(tmats, teammates.all[i,], use.leagavg), error = function(e) e)
-    if(!(inherits(temp, "error"))) evs[[i]] <- temp else evs[[i]] <- NA
-  }
-  
-  p.do <- epv.do <- rep(NA, nrow(tdat))
-  ppass1 <- epass1 <- rep(NA, nrow(tdat))
-  ppass2 <- epass2 <- rep(NA, nrow(tdat))
-  ppass3 <- epass3 <- rep(NA, nrow(tdat))
-  ppass4 <- epass4 <- rep(NA, nrow(tdat))
-  pmake <- emake <- rep(NA, nrow(tdat))
-  pmiss <- emiss <- rep(NA, nrow(tdat))
-  pTO <- eTO <- rep(NA, nrow(tdat))
-  
-  if(id %in% use.leagavg) fvs <- fvs.pos else fvs <- fvs.ind
-  
-  ppass1 <- fvs$fvs_pass1
-  ppass2 <- fvs$fvs_pass2
-  ppass3 <- fvs$fvs_pass3
-  ppass4 <- fvs$fvs_pass4
-  
-  pmake <- fvs$fvs_take*fvs$fvs_make
-  pmiss <- fvs$fvs_take*(1-fvs$fvs_make)
-  pTO <- fvs$fvs_TO
-  
-  for(i in 1:nrow(teammates.all)){
-    if(is.na(evs[[i]])[1]) next
-    these <- which(tdat$off1_ent == teammates[i,1] & tdat$off2_ent == teammates[i,2] & 
-                     tdat$off3_ent == teammates[i,3] & tdat$off4_ent == teammates[i,4])
-    place <- which(teammates.all[i,] == id)
-    if(place == 1){
-      adder <- c(14,28,42,56)
-    } else if(place == 2){
-      adder <- c(0,28,42,56)
-    } else if(place == 3){
-      adder <- c(0,14,42,56)
-    } else if(place == 4){
-      adder <- c(0,14,28,56)
-    } else if(place == 5){
-      adder <- c(0,14,28,42)
-    } 
-    statepass1 <- match(paste(eP_pass1[these], cont_pass1[these], sep="-"), state_nms)
-    epass1[these] <- evs[[i]][adder[1]+statepass1]
-    
-    statepass2 <- match(paste(eP_pass2[these], cont_pass2[these], sep="-"), state_nms)
-    epass2[these] <- evs[[i]][adder[2]+statepass2]
-    
-    statepass3 <- match(paste(eP_pass3[these], cont_pass3[these], sep="-"), state_nms)
-    epass3[these] <- evs[[i]][adder[3]+statepass3]
-    
-    statepass4 <- match(paste(eP_pass4[these], cont_pass4[these], sep="-"), state_nms)
-    epass4[these] <- evs[[i]][adder[4]+statepass4]
-    
-    if(!(fullres)){
-      statein <- match(paste(tdat$eP[these], tdat$ndef[these] < cont.limit, sep="-"), state_nms)
-      epv.do[these] <- evs[[i]][14*(place-1) + statein]
-    }
-  }
-  
-  emake <- 2*(tdat$threept == 0) + 3*(tdat$threept == 1)
-  emiss <- rep(.15, nrow(tdat))
-  eTO <- rep(0, nrow(tdat))
-  
-  p.do <- ppass1 + ppass2 + ppass3 + ppass4 + pmake + pmiss + pTO
-  
-  if(fullres){
-    epv.do <- (ppass1*epass1 + ppass2*epass2 + ppass3*epass3 + ppass4*epass4 + pmake*emake + pmiss*emiss + pTO*eTO)/p.do
-  }
-  
-  epv.do[which(tdat$event_id %in% c(3,4))] <- ((pmake*emake + pmiss*emiss)/(pmake + pmiss))[which(tdat$event_id %in% c(3,4))]
-  epv.do[which(tdat$event_id == 7)] <- 0
-  epv.do[which(tdat$event_id == 31)] <- epass1[which(tdat$event_id == 31)]
-  epv.do[which(tdat$event_id == 32)] <- epass2[which(tdat$event_id == 32)]
-  epv.do[which(tdat$event_id == 33)] <- epass3[which(tdat$event_id == 33)]
-  epv.do[which(tdat$event_id == 34)] <- epass4[which(tdat$event_id == 34)]
-  
-  filter.epv <- epv.do
-  thesediff <- diff(tdat$time)
-  ends <- c(which(thesediff < 0 | thesediff > 100), nrow(tdat))
-  #ends <- ends[which(substr(tdat$game[ends],7,8) %in% c("01","02","03"))]
-  starts <- c(1, which(thesediff < 0 | thesediff > 100) + 1)
-  #starts <- starts[which(substr(tdat$game[ends],7,8) %in% c("01","02","03"))]
-  posses <- lapply(1:length(starts), function(i) starts[i]:ends[i])
-  for(i in 1:length(posses)){
-    if(length(posses[[i]]) > 1){
-      for(j in seq(ends[i]-1, starts[i], -1)){
-        if(!(is.na(p.do[j])) & p.do[j] < 1){
-          filter.epv[j] <- epv.do[j]*p.do[j] + (1-p.do[j])*filter.epv[j+1]
-        }
+# add EPV fields to dat
+combineDatEPV <- function(dat, epv.table) {
+  epv.table <- data.table(epv.table)
+  dat.table <- data.table(dat)
+  setkey(epv.table, time)
+  setkey(dat.table, time)
+  temp <- merge(dat.table, epv.table, all.x=TRUE)
+  epv.temp <- temp$epv.smooth
+  for(i in 2:length(epv.temp)) {
+    if(is.na(epv.temp[i]) & !is.na(temp$possID[i]) & !is.na(temp$possID[i-1])) {
+      if(temp$possID[i] == temp$possID[i-1]) {
+        epv.temp[i] <- epv.temp[i-1]
       }
     }
   }
+  temp$epv.smooth <- epv.temp
+  return(data.frame(temp))
+}
+
+EPVA <- function(tdat, id) {
+  # calculates EPVA for player 'id' from data 'tdat'
+  # Inputs:
+  #   tdat: 'tdat' formatted data frame
+  #   id: player id for whom we calculate EPVA
+  # Outputs:
+  #   vector of EPV-added by touch (for each player 'id' touch in tdat)
+  id.dat <- tdat[which(tdat$entity == id), ]
+  if(nrow(id.dat) == 0)
+    stop(sprintf("player %s doesn't appear in data", id))
+  hyper <- getHyperParams(id.dat)
+  id.dat.covars <- tdatCovars(id.dat)
+  fv <- fvMatToDF(fitVals(hyper, id.dat, id.dat.covars))
   
-  ppp <- cbind(ppass1, ppass2, ppass3, ppass4)
-  epp <- cbind(epass1, epass2, epass3, epass4)
-  epass <- rowSums(ppp*epp)/rowSums(ppp)
-  shot_sat <- mean((epv.do - epass)[which(tdat$event_id %in% c(3,4))], na.rm=T)
+  ev.out.id <- evLineups(id.dat)
+  ev.out.rp <- evLineups(id.dat, use.leagavg=id)
   
-  mm <- sapply(1:nrow(ppp), function(i) sum(pmake[i] + pmiss[i] > ppp[i,], na.rm=T))
-  eshot <- (pmake*emake + pmiss*emiss)/(pmake + pmiss)
-  pass_sat <- mean((epv.do - eshot)[which(mm >= 3 & tdat$event_id %in% c(31,32,33,34))], na.rm=T)
+  probs.vals.id <- fvToEPV(id.dat, id.dat.covars, fv, ev.out.id)
+  probs.vals.rp <- fvToEPV(id.dat, id.dat.covars, fv, ev.out.rp)
   
-  eps <- 1/25
-  dpass1 <- diff(c(ppass1,0)) 
-  dpass2 <- diff(c(ppass2,0))
-  dpass3 <- diff(c(ppass3,0))
-  dpass4 <- diff(c(ppass4,0))
-  dmake <- diff(c(pmake,0))
-  dmiss <- diff(c(pmiss,0))
-  dTO <- diff(c(pTO,0))
-  pno <- 1 - p.do
-  dno <- diff(c(pno,0))
+  touch.starts <- sapply(unique(id.dat$touchID), function(i) min(which(id.dat$touchID == i)))
+  touch.ends <- sapply(unique(id.dat$touchID), function(i) max(which(id.dat$touchID == i)))
   
-  part1 <- (ppass1 + eps*dpass1*pno/(1-eps*dno))*epass1
-  part2 <- (ppass2 + eps*dpass2*pno/(1-eps*dno))*epass2
-  part3 <- (ppass3 + eps*dpass3*pno/(1-eps*dno))*epass3
-  part4 <- (ppass4 + eps*dpass4*pno/(1-eps*dno))*epass4
-  part5 <- (pmake + eps*dmake*pno/(1-eps*dno))*emake
-  part6 <- (pmiss + eps*dmiss*pno/(1-eps*dno))*emiss
-  part7 <- (pTO + eps*dTO*pno/(1-eps*dno))*0
+  epv.id <- probs.vals.id$vals$enow[touch.ends]
+  epv.rp <- probs.vals.rp$vals$enow[touch.starts]
+  return(epv.id - epv.rp)
+}
+
+shotSatis <- function(tdat, id) {
+  # calculates shot satisfaction for player 'id' from data 'tdat'
+  # Inputs:
+  #   tdat: 'tdat' formatted data frame
+  #   id: player id for whom we calculate shot satis.
+  # Outputs:
+  #   vector of satisfaction scores per shot attempt
+  id.dat <- tdat[which(tdat$entity == id & tdat$event_id %in% c(3,4)), ]
+  if(nrow(id.dat) == 0)
+    stop(sprintf("player %s doesn't shoot in data", id))
+  hyper <- getHyperParams(id.dat)
+  id.dat.covars <- tdatCovars(id.dat)
+  fv <- fvMatToDF(fitVals(hyper, id.dat, id.dat.covars))
   
-  epv.mic <- (part1 + part2 + part3 + part4 + part5 + part6 + part7)
-  epv.mic <- epv.mic/(1-pno/(1-eps*dno))
-  epv.mic[which(tdat$event_id %in% c(3,4,7,31,32,33,34))] <- epv.do[which(tdat$event_id %in% c(3,4,7,31,32,33,34))]
+  ev.out.id <- evLineups(id.dat)
   
-  
-  return(data.frame(game=tdat$game, quarter=tdat$quarter, time=tdat$time, game_clock=tdat$game_clock,
-                    epv.do=epv.do, epv.mic=epv.mic, epv.filter=filter.epv, ppass1=ppass1,
-                    ppass2=ppass2,
-                    ppass3=ppass3,
-                    ppass4=ppass4,
-                    pmake=pmake,
-                    pmiss=pmiss,
-                    pTO=pTO,
-                    epass1=epass1,
-                    epass2=epass2,
-                    epass3=epass3,
-                    epass4=epass4,
-                    emake=emake,
-                    emiss=emiss,
-                    eTO=eTO))
+  probs.vals.id <- fvToEPV(id.dat, id.dat.covars, fv, ev.out.id)
+  shot.val <- (probs.vals.id$probs$pmake * probs.vals.id$vals$emake + 
+    probs.vals.id$probs$pmiss * probs.vals.id$vals$emiss) / 
+    (probs.vals.id$probs$pmake + probs.vals.id$probs$pmiss)
+  pass.probs <- probs.vals.id$probs[, grep("pass", names(probs.vals.id$probs))]
+  pass.vals <- probs.vals.id$vals[, grep("pass", names(probs.vals.id$vals))]
+  pass.val <- rowSums(pass.probs * pass.vals) / rowSums(pass.probs)
+  return(shot.val - pass.val)
 }

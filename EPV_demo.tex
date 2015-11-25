@@ -82,7 +82,7 @@ To begin, we must first set the directories containing the supplemental data and
 \end{kframe}
 \end{knitrout}
 
-Now we load the \texttt{csv} file containing a full game of optical tracking data:
+Now we load the \texttt{csv} file containing a full game of optical tracking data. As mentioned in the paper, data from this game was not used in parameter inference for any model related to EPV.
 
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
@@ -121,8 +121,9 @@ Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plo
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/graphics.R"}\hlstd{, code.dir))}
-\hlkwd{par}\hlstd{(}\hlkwc{mar}\hlstd{=}\hlkwd{rep}\hlstd{(}\hlnum{0}\hlstd{,} \hlnum{4}\hlstd{))}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/constants.R"}\hlstd{, code.dir))} \hlcom{# loads libraries and constants used throughout code}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/graphics.R"}\hlstd{, code.dir))}  \hlcom{# graphics/plotting functions}
+\hlkwd{par}\hlstd{(}\hlkwc{mar}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,} \hlnum{0}\hlstd{,} \hlnum{0}\hlstd{,} \hlnum{0}\hlstd{))}
 \hlkwd{data.plotter}\hlstd{(dat,} \hlnum{1800}\hlstd{)}
 \end{alltt}
 \end{kframe}\begin{figure}[H]
@@ -137,7 +138,11 @@ Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plo
 
 \end{knitrout}
 
-In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
+\subsection{Transformed data}
+
+In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court and removing moments where the gameplay is suspended. The following code performs these data tasks:
+
+
 
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
@@ -146,28 +151,32 @@ In this format, the data lacks information necessary for computing EPV. Most imp
 \hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/covariates.R"}\hlstd{, code.dir))}
 
 \hlstd{poss} \hlkwb{<-} \hlkwd{possession.indicator}\hlstd{(dat)} \hlcom{# infer ballcarrier... takes about a minute}
-\hlstd{new.dat} \hlkwb{<-} \hlkwd{rearrange.data}\hlstd{(dat, poss)} \hlcom{# re-shuffle columns by to ballcarrier... (2 min)}
-\hlstd{new.dat} \hlkwb{<-} \hlkwd{offensive.halfcourt}\hlstd{(new.dat)} \hlcom{# transforming to offensive halfcourt}
-\hlstd{covariates} \hlkwb{<-} \hlkwd{getAllCovars}\hlstd{(new.dat)} \hlcom{# get covariates... (3 min)}
-\hlstd{new.dat} \hlkwb{<-} \hlkwd{data.frame}\hlstd{(new.dat, covariates)}
-\hlkwd{save}\hlstd{(new.dat,} \hlkwc{file}\hlstd{=}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/new.dat.Rdata"}\hlstd{, data.dir))}
+\hlstd{tdat} \hlkwb{<-} \hlkwd{rearrange.data}\hlstd{(dat, poss)} \hlcom{# re-shuffle columns by to ballcarrier... (2 min)}
+\hlstd{tdat} \hlkwb{<-} \hlkwd{offensive.halfcourt}\hlstd{(tdat)} \hlcom{# transforming to offensive halfcourt}
+\hlstd{tdat} \hlkwb{<-} \hlkwd{offensive.ballcarrier}\hlstd{(tdat)}
+\hlstd{touchID} \hlkwb{<-} \hlkwd{get.touchID}\hlstd{(tdat)}
+\hlstd{covariates} \hlkwb{<-} \hlkwd{getAllCovars}\hlstd{(tdat)} \hlcom{# get covariates... (3 min)}
+\hlstd{tdat} \hlkwb{<-} \hlkwd{data.frame}\hlstd{(tdat,} \hlkwc{touchID}\hlstd{=touchID, covariates)}
+\hlkwd{save}\hlstd{(tdat,} \hlkwc{file}\hlstd{=}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/tdat.Rdata"}\hlstd{, data.dir))}
 \end{alltt}
 \end{kframe}
 \end{knitrout}
 
-Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{new.dat}:
+Or, since this takes few minutes to complete, it may be easier to load a pre-computed version of the transformed data set, \texttt{tdat}:
 
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/new.dat.Rdata"}\hlstd{, data.dir))}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/tdat.Rdata"}\hlstd{, data.dir))}
 \end{alltt}
 \end{kframe}
 \end{knitrout}
 
 \section{Components of hierarchical models}
 
-The hierarchical models used to estimate parameters for the multiresolution transition models rely on preprocessed data summaries. First, the conditional autoregressive model priors used for many model parameters rely on a graph $\mathbf{H}$ of player similarity. As discussed in the paper, this graph is constructed based on the similarity in players' court occupancy distributions. We can visualize these court occupancy distributions, as well as the similarity scores we calculate between them.
+\subsection{Player similarity adjacency matrix, $\mathbf{H}$}
+
+The hierarchical models used to estimate parameters for the multiresolution transition models rely on preprocessed data summaries. First, the conditional autoregressive model priors used for many model parameters rely on a graph $\mathbf{H}$ of player similarity, represented using an adjacency matrix. As discussed in the paper, this graph is constructed based on the similarity in players' court occupancy distributions. We can visualize these court occupancy distributions, as well as the similarity scores we calculate between them.
 
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
@@ -177,13 +186,13 @@ The hierarchical models used to estimate parameters for the multiresolution tran
 \hlkwd{head}\hlstd{(players)}
 \end{alltt}
 \begin{verbatim}
-##   X player_id firstname lastname       position height weight byear rookie
-## 1 1      3306     Elton    Brand Forward-Center     81    254  1979   1999
-## 2 2     58293      Kyle   Korver  Guard-Forward     79    212  1981   2003
-## 3 3    292401       Lou Williams          Guard     73    175  1986   2005
-## 4 4    237675      Paul  Millsap Forward-Center     80    258  1985   2006
-## 5 5    280587        Al  Horford Forward-Center     82    250  1986   2007
-## 6 6    398043      Jeff   Teague    Point-Guard     74    181  1988   2009
+##   player_id firstname lastname       position height weight byear rookie position.number
+## 1      3306     Elton    Brand Forward-Center     81    254  1979   1999               8
+## 2     58293      Kyle   Korver  Guard-Forward     79    212  1981   2003               4
+## 3    292401       Lou Williams          Guard     73    175  1986   2005               2
+## 4    237675      Paul  Millsap Forward-Center     80    258  1985   2006               8
+## 5    280587        Al  Horford Forward-Center     82    250  1986   2007               8
+## 6    398043      Jeff   Teague    Point-Guard     74    181  1988   2009               1
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
@@ -280,21 +289,21 @@ To check any player's ``neighbors'' according to \texttt{H}, we can do (for Al H
 \hlkwd{paste}\hlstd{(players}\hlopt{$}\hlstd{firstname, players}\hlopt{$}\hlstd{lastname)[}\hlkwd{which}\hlstd{(H[this.player, ]} \hlopt{==} \hlnum{1}\hlstd{)]}
 \end{alltt}
 \begin{verbatim}
-##  [1] "Brandon Bass"      "J.J. Hickson"      "Andre Drummond"   
-##  [4] "Tony Mitchell"     "David Lee"         "Dwight Howard"    
-##  [7] "Blake Griffin"     "Zach Randolph"     "Anthony Davis"    
-## [10] "Amar'e Stoudemire" "Jason Maxiell"     "Glen Davis"       
+##  [1] "Brandon Bass"      "J.J. Hickson"      "Andre Drummond"    "Tony Mitchell"    
+##  [5] "David Lee"         "Dwight Howard"     "Blake Griffin"     "Zach Randolph"    
+##  [9] "Anthony Davis"     "Amar'e Stoudemire" "Jason Maxiell"     "Glen Davis"       
 ## [13] "DeMarcus Cousins"  "Jonas Valanciunas" "Enes Kanter"
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
+
+\subsection{Spatial effect basis functions}
 
 Similarly, let's load the basis functions that are used in representing the spatial effects in players' macrotransition entry models: we denote these basis functions $\phi_{ji}$, where $i=1, \ldots, 10$, and $j$ indexes shot-taking, four different pass options, and turnovers (recall that for the spatial effects in the shot probability model (Equation 10 in the paper), we use the same basis functions as we do for the shot-taking hazard model). To recreate Figure 6 of the paper, which plots the shot-taking bases, we'd do:
 
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/model_util.R"}\hlstd{, code.dir))} \hlcom{# loads many modeling functions}
 \hlkwd{par}\hlstd{(}\hlkwc{mfrow} \hlstd{=} \hlkwd{c}\hlstd{(}\hlnum{2}\hlstd{,}\hlnum{5}\hlstd{))}
 \hlkwa{for}\hlstd{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlnum{10}\hlstd{)}
   \hlkwd{spatialPlot1}\hlstd{(take.basis[i, ],} \hlkwc{legend}\hlstd{=F)}
@@ -313,6 +322,8 @@ Similarly, let's load the basis functions that are used in representing the spat
 
 \section{Loading parameters and model estimates}
 
+\subsection{Microtransition model}
+
 Here, we will load and illustrate the results of the multiresolution transition models discussed in Section 3 of the paper. First, let's load the (offensive) microtransition model output for LeBron James, print the parameter estimates, and plot of the acceleration effects $\mu^{\ell}_x, \mu^{\ell}_y$, as in Figure 4 of the paper.
 
 \begin{footnotesize}
@@ -324,7 +335,7 @@ Here, we will load and illustrate the results of the multiresolution transition 
 \hlkwd{xtable}\hlstd{(with.ball}\hlopt{$}\hlstd{io.x}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 11 11:52:10 2015
+% Tue Nov 24 21:56:14 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -363,28 +374,30 @@ The defensive microtransition model is less complicated, and we can fit it very 
 \begin{footnotesize}
 \begin{kframe}
 \begin{alltt}
-\hlstd{def.micro} \hlkwb{<-} \hlkwd{microDefModel}\hlstd{(new.dat)}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/parameters.R"}\hlstd{, code.dir))} \hlcom{# loads many modeling functions}
+\hlstd{def.micro} \hlkwb{<-} \hlkwd{microDefModel}\hlstd{(tdat)}
 \hlcom{# coefficients are a_x, c_x, and b_x from Equation 6 in paper}
 \hlkwd{xtable}\hlstd{(}\hlkwd{summary}\hlstd{(def.micro}\hlopt{$}\hlstd{mod.x)}\hlopt{$}\hlstd{coef[,} \hlnum{1}\hlopt{:}\hlnum{3}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 11 11:38:04 2015
+% Tue Nov 24 21:56:21 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrr}
   \hline
  & Estimate & Std. Error & t value \\ 
   \hline
-(Intercept) & -0.00 & 0.00 & -21.15 \\ 
-  def.eps.x[-length(def.eps.x)] & 0.98 & 0.00 & 2555.66 \\ 
-  residual.x[-length(residual.x)] & -0.00 & 0.00 & -29.18 \\ 
-  opt.eps.x[-length(opt.eps.x)] & 0.01 & 0.00 & 25.64 \\ 
+(Intercept) & -0.00 & 0.00 & -29.74 \\ 
+  def.eps.x[-length(def.eps.x)] & 0.96 & 0.00 & 1315.54 \\ 
+  residual.x[-length(residual.x)] & -0.00 & 0.00 & -27.12 \\ 
+  opt.eps.x[-length(opt.eps.x)] & 0.00 & 0.00 & 3.99 \\ 
    \hline
 \end{tabular}
 \end{table}
 
 \end{footnotesize}
 
+\subsection{Macrotransition entry models}
 
 We have six macrotransition entry models (from Section 3.2 of the paper). Each is fit hierarchically for all players in the NBA using the R-INLA software, as discussed in Section 4 of the paper. Let's load the results of the shot-taking macrotransition entry model, and interpret some of the results. 
 
@@ -397,7 +410,7 @@ We have six macrotransition entry models (from Section 3.2 of the paper). Each i
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{2}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 11 11:38:17 2015
+% Tue Nov 24 21:56:28 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrr}
@@ -433,7 +446,7 @@ We have six macrotransition entry models (from Section 3.2 of the paper). Each i
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.dribble[this.player,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 11 11:43:27 2015
+% Tue Nov 24 21:56:29 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -457,7 +470,7 @@ However, the random effects on the spatial basis coefficients are stacked in a $
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 11 11:38:18 2015
+% Tue Nov 24 21:56:29 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -473,7 +486,7 @@ However, the random effects on the spatial basis coefficients are stacked in a $
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.b1[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])} \hlcom{# identical}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 11 11:38:18 2015
+% Tue Nov 24 21:56:29 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -522,7 +535,7 @@ For Chris Bosh, for instance, we can view his parameter estimates and see where 
 \hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(param.names, values, ranks),} \hlkwc{digits}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{2}\hlstd{,}\hlnum{0}\hlstd{))}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 11 11:38:18 2015
+% Tue Nov 24 21:56:29 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rlrr}
@@ -608,6 +621,8 @@ To view the spatial effect on a passing hazard (for instance, to player 1---the 
 
 \end{knitrout}
 
+\subsection{Transition probability matrices}
+
 The last model component needed to calculate EPV are the transition probability matrices for $C_t$, described in Section 3.4 of the paper. We load these---for instance, for Dwyane Wade, by running:
 
 \begin{knitrout}\footnotesize
@@ -627,52 +642,22 @@ The last model component needed to calculate EPV are the transition probability 
 
 \section{Calculating EPV}
 
+\subsection{Coarsened state expected point values}
+
 Given estimates of our parameters, EPV is calculated using Monte Carlo. The general idea, introduced in Section 3 of the paper, is to alternate draws from the micro- and macrotransition entry models until a macrotransition (pass, shot attempt, turnover) occurs. Then, given the predicted outcome of this macrotransition, we calculate EPV using the transition probability matrix of coarsened states. Before actually simulating EPV draws, it's useful to look at what the expected point values are of each coarsened state, as EPV will always be a weighted average of these values:
 
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlstd{hyper} \hlkwb{<-} \hlkwd{getHyperParams}\hlstd{(new.dat)} \hlcom{# makes sure all parameter inference is loaded}
-\hlstd{ev.out} \hlkwb{<-} \hlkwd{evLineups}\hlstd{(new.dat)} \hlcom{# coarsened state EVs for each offensive lineup in new.dat}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/parameters.R"}\hlstd{, code.dir))}
+\hlstd{hyper} \hlkwb{<-} \hlkwd{getHyperParams}\hlstd{(tdat)} \hlcom{# makes sure all parameter inference is loaded}
+\hlstd{ev.out} \hlkwb{<-} \hlkwd{evLineups}\hlstd{(tdat)} \hlcom{# coarsened state EVs for each offensive lineup in tdat}
 \end{alltt}
-\begin{verbatim}
-## [1] "loading tmat 1 of 24"
-## [1] "loading tmat 2 of 24"
-## [1] "loading tmat 3 of 24"
-## [1] "loading tmat 4 of 24"
-## [1] "loading tmat 5 of 24"
-## [1] "loading tmat 6 of 24"
-## [1] "loading tmat 7 of 24"
-## [1] "loading tmat 8 of 24"
-## [1] "loading tmat 9 of 24"
-## [1] "loading tmat 10 of 24"
-## [1] "loading tmat 11 of 24"
-## [1] "loading tmat 12 of 24"
-## [1] "loading tmat 13 of 24"
-## [1] "loading tmat 14 of 24"
-## [1] "loading tmat 15 of 24"
-## [1] "loading tmat 16 of 24"
-## [1] "loading tmat 17 of 24"
-## [1] "loading tmat 18 of 24"
-## [1] "loading tmat 19 of 24"
-## [1] "loading tmat 20 of 24"
-## [1] "loading tmat 21 of 24"
-## [1] "loading tmat 22 of 24"
-## [1] "loading tmat 23 of 24"
-## [1] "loading tmat 24 of 24"
-\end{verbatim}
-
-
-{\ttfamily\noindent\color{warningcolor}{\#\# Warning in readChar(con, 5L, useBytes = TRUE): cannot open compressed file '/home/dan/xyhoops/XYHoops/dlc\_src/new/demo/data/tmats/NA.Rdata', probable reason 'No such file or directory'}}\begin{verbatim}
-## [1] "50 of 169"
-## [1] "100 of 169"
-## [1] "150 of 169"
-\end{verbatim}
 \end{kframe}
 \end{knitrout}
 
 % change "teammates.all" to "lineups"!
-In \texttt{ev.out}, \texttt{teammates.all} is a matrix of 5-man lineups that appear in \texttt{new.dat} (there may be duplicate rows). For instance, we have the starting 5 for the Miami Heat:
+In \texttt{ev.out}, \texttt{teammates.all} is a matrix of 5-man lineups that appear in \texttt{tdat} (there may be duplicate rows). For instance, we have the starting 5 for the Miami Heat:
 
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
@@ -682,12 +667,12 @@ In \texttt{ev.out}, \texttt{teammates.all} is a matrix of 5-man lineups that app
 \hlstd{this.lineup[,} \hlnum{2}\hlopt{:}\hlnum{4}\hlstd{]}
 \end{alltt}
 \begin{verbatim}
-##     player_id firstname lastname
-## 243    296572     Mario Chalmers
-## 238     61849    Dwyane     Wade
-## 236    214152    LeBron    James
-## 240    226806    Udonis   Haslem
-## 237    172631     Chris     Bosh
+##     firstname lastname       position
+## 243     Mario Chalmers    Point-Guard
+## 238    Dwyane     Wade          Guard
+## 236    LeBron    James        Forward
+## 240    Udonis   Haslem  Power-Forward
+## 237     Chris     Bosh Forward-Center
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
@@ -701,7 +686,7 @@ For each 5-man lineup, there are $5 \times 2 \text{ (defended or not) } \times 7
 \hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(}\hlkwc{state}\hlstd{=lineup.states,} \hlkwc{EV}\hlstd{=ev.out}\hlopt{$}\hlstd{evs[[}\hlnum{2}\hlstd{]])[}\hlkwd{grep}\hlstd{(}\hlstr{"James"}\hlstd{, lineup.states), ],} \hlkwc{digits}\hlstd{=}\hlnum{2}\hlstd{)}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Sat Nov 14 12:43:25 2015
+% Tue Nov 24 21:56:31 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rlr}
@@ -728,13 +713,179 @@ For each 5-man lineup, there are $5 \times 2 \text{ (defended or not) } \times 7
 
 \end{footnotesize}
 
-These 
+These results seem pretty sensible, as, for instance, EVs are uniformly higher for uncontested states, with the difference especially great within the restricted area (1.60 versus 1.42) and corner 3 (1.21 versus 1.09). Note that with different teammates, we would see slightly different EVs for these states.
+
+\subsection{EPV curves}
+
+As mentioned in the paper, given estimates of all parameter values, EPV is computed by Monte Carlo sampling from the multiresolution transition models. This is a computationally expensive procedure, dominated by computing spatial effects for every player-position update from the microtransition model and hazard calculation from the macrotransition entry/exit models. However, it is straightforward to sample multiple time points together.
+
+To supply EPV curves for a full game, it's most efficient to draw a single EPV estimate for all time points in a game, and then parallelize this across multiple machines that don't need to share memory. The code executes an EPV draw at each time point for every offensive possession in our sample game:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/EPV_calcs.R"}\hlstd{, code.dir))}
+\hlstd{draw.raw} \hlkwb{<-} \hlkwd{multiresDraw}\hlstd{(tdat, hyper, def.micro, ev.out,} \hlkwc{nmic}\hlstd{=}\hlnum{50}\hlstd{,} \hlkwc{save.positions}\hlstd{=F)}
+\hlstd{draw} \hlkwb{<-} \hlkwd{compressEPV}\hlstd{(tdat, draw.raw}\hlopt{$}\hlstd{fv.epv.list)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+The \texttt{nmic} argument specifies 50 iterations (2 seconds) of the microtranistion model, which is usually sufficient to observe $\tau_t$, a macrotransition entry. The \texttt{save.positions} argument stores the player-position innovations supplied by the micro model. These are necessary to reproduce Figure 7, which shows players' predicted motion paths, but necessitate lots of additional storage, as they essentially replicate the full positional data \texttt{nmic} times for each EPV draw.
+
+We can load a pre-computed version of \texttt{draw}:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/draw.Rdata"}\hlstd{, data.dir))}
+\hlkwd{names}\hlstd{(draw)}
+\end{alltt}
+\begin{verbatim}
+## [1] "epv"       "probs"     "vals"      "probs.now" "vals.now"
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+Here, \texttt{epv} is a vector of EPV values corresponding to each row of \texttt{tdat}. \texttt{probs} is a data frame where each row gives the probabilities associated with each possible macrotransition event at time $t$ ($\mathbb{P}(C_{\delta_t} | \mathcal{F}^{(Z)}_t)$), and \texttt{vals} gives the associated expected point values conditional on these macrotransitions: $\mathbb{E}[X | C_{\delta_t}]$ (these probabilities/values are illustrated in Figure 7 of the paper). \texttt{probs} and \texttt{vals} contain an ``\texttt{other}'' state which represents no macrotransition occurring within the \texttt{50} simulated microtransitions. In this case, to calculate the expected value, we use the coarsened state expected value associated with the final microtransition draw, in this case $\mathbb{E}[X | C_{t + 2}]$. \texttt{probs.now} and \texttt{vals.now} are the instantaneous macrotransition probabilities and associated expected values. 
+
+For instance, during the first possession in this game, after Udonis Haslem brings the ball into the offensive halfcourt, we see the next action to most likely be  pass to Chalmers or Chris Bosh (the next play is a pass to Bosh). A shot attempt is extremely unlikely, and there is a 0.226 probability that Haslem will still possess the ball 2 seconds down the road. Among his passing options, James is the most valuable, though also the least likely to occur (James is near the basket, but the passing lane doesn't appear to be open). 
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{transformed.data.plotter}\hlstd{(tdat,} \hlnum{30}\hlstd{)}
+\end{alltt}
+\end{kframe}\begin{figure}[H]
+
+{\centering \includegraphics[width=\maxwidth]{figure/epv_example_1-1} 
+
+}
+
+\caption[Udonis Haslem with ball possession]{Udonis Haslem with ball possession. His four passing options are 1: Mario Chalmers, 2: Dwyane Wade, 3: LeBron James, 4: Chris Bosh.}\label{fig:epv_example_1}
+\end{figure}
+
+\begin{kframe}\begin{alltt}
+\hlstd{draw}\hlopt{$}\hlstd{probs[}\hlnum{30}\hlstd{, ]}
+\end{alltt}
+\begin{verbatim}
+##        pass1      pass2      pass3     pass4        make       miss         TO     other
+## 30 0.5747731 0.02065291 0.01900831 0.1448298 0.000981215 0.00157953 0.01181597 0.2263592
+\end{verbatim}
+\begin{alltt}
+\hlstd{draw}\hlopt{$}\hlstd{vals[}\hlnum{30}\hlstd{, ]}
+\end{alltt}
+\begin{verbatim}
+##        pass1    pass2    pass3    pass4 make miss TO     other
+## 30 0.9676442 1.017705 1.105218 1.014151    3 0.15  0 0.9707326
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+Because each EPV draw executes independent multiresolution transition simulations for each time point $t$, the resultant EPV curve is not very smooth. For instance, at time $t$, we might simulate a player driving toward the basket and attempting a layup, whereas at time $t+\epsilon$ we simulate the same player passing to a teammate. We see this below:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{plot}\hlstd{(}\hlnum{720} \hlopt{-} \hlstd{tdat}\hlopt{$}\hlstd{game_clock[}\hlnum{1}\hlopt{:}\hlnum{100}\hlstd{], draw}\hlopt{$}\hlstd{epv[}\hlnum{1}\hlopt{:}\hlnum{100}\hlstd{],} \hlkwc{xlab}\hlstd{=}\hlstr{"game clock"}\hlstd{,} \hlkwc{ylab}\hlstd{=}\hlstr{"EPV"}\hlstd{)}
+\end{alltt}
+\end{kframe}\begin{figure}[H]
+
+{\centering \includegraphics[width=\maxwidth]{figure/epv_draw_plot-1} 
+
+}
+
+\caption[EPV estimates of a single draw]{EPV estimates of a single draw}\label{fig:epv_draw_plot}
+\end{figure}
 
 
+\end{knitrout}
+
+Of course, averaging over multiple EPV draws offers more smoothness---though by design, we see spikes in EPV exactly at moments when passes/shots/turnovers occur. The files \texttt{EPV\_draw.R} and \texttt{combine\_draws.R} execute independent EPV draws for this game on a computing cluster. We have combined 200 of these draws to obtain a final Monte Carlo EPV estimate (as well as Monte Carlo estimates of the transition probabilities and values). Below we load this, and merge these EPV estimates into the original full data set \texttt{dat}, where EPV is \texttt{NA} when the ball is not in the offensive halfcourt with the game clock moving. We also compute a "smoothed EPV" to (very slightly) interpolate the pointwise EPV estimates over time.
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/EPV_calcs.R"}\hlstd{, code.dir))}
+\hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/combined.epv.draws.Rdata"}\hlstd{, data.dir))}
+\hlstd{e.dat} \hlkwb{<-} \hlkwd{combineDatEPV}\hlstd{(dat, epv.table)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+We can now plot out EPV ``tickers'', as in Figure 2 of the paper:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{par}\hlstd{(}\hlkwc{xpd}\hlstd{=}\hlnum{NA}\hlstd{,} \hlkwc{bty}\hlstd{=}\hlstr{"n"}\hlstd{,} \hlkwc{mfrow}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,} \hlnum{2}\hlstd{))}
+\hlstd{poss.1} \hlkwb{<-} \hlkwd{which}\hlstd{(e.dat}\hlopt{$}\hlstd{possID} \hlopt{==} \hlnum{1}\hlstd{)}
+\hlkwd{plot}\hlstd{(}\hlnum{720} \hlopt{-} \hlstd{e.dat}\hlopt{$}\hlstd{game_clock[poss.1], e.dat}\hlopt{$}\hlstd{epv.smooth[poss.1],}
+     \hlkwc{xlab}\hlstd{=}\hlstr{"game clock"}\hlstd{,} \hlkwc{ylab}\hlstd{=}\hlstr{"EPV"}\hlstd{,} \hlkwc{type}\hlstd{=}\hlstr{"l"}\hlstd{,} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{,} \hlkwc{ylim}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{.5}\hlstd{,} \hlnum{1.5}\hlstd{))}
+\hlkwd{points}\hlstd{(}\hlnum{720} \hlopt{-} \hlstd{e.dat}\hlopt{$}\hlstd{game_clock[poss.1], e.dat}\hlopt{$}\hlstd{epv[poss.1],} \hlkwc{pch}\hlstd{=}\hlnum{20}\hlstd{,} \hlkwc{cex}\hlstd{=}\hlnum{0.5}\hlstd{)}
+
+\hlstd{poss.90} \hlkwb{<-} \hlkwd{which}\hlstd{(e.dat}\hlopt{$}\hlstd{possID} \hlopt{==} \hlnum{90}\hlstd{)} \hlcom{# possession shown in paper}
+\hlkwd{plot}\hlstd{(}\hlnum{720} \hlopt{-} \hlstd{e.dat}\hlopt{$}\hlstd{game_clock[poss.90], e.dat}\hlopt{$}\hlstd{epv.smooth[poss.90],}
+     \hlkwc{xlab}\hlstd{=}\hlstr{"game clock"}\hlstd{,} \hlkwc{ylab}\hlstd{=}\hlstr{"EPV"}\hlstd{,} \hlkwc{type}\hlstd{=}\hlstr{"l"}\hlstd{,} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{,} \hlkwc{ylim}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{.5}\hlstd{,} \hlnum{1.5}\hlstd{))}
+\hlkwd{points}\hlstd{(}\hlnum{720} \hlopt{-} \hlstd{e.dat}\hlopt{$}\hlstd{game_clock[poss.90], e.dat}\hlopt{$}\hlstd{epv[poss.90],} \hlkwc{pch}\hlstd{=}\hlnum{20}\hlstd{,} \hlkwc{cex}\hlstd{=}\hlnum{0.5}\hlstd{)}
+\end{alltt}
+\end{kframe}\begin{figure}[H]
+
+{\centering \includegraphics[width=\maxwidth]{figure/epv_ticker_1-1} 
+
+}
+
+\caption[EPV curves for two possessions in this game]{EPV curves for two possessions in this game. The line slightly smooths the actual EPV values (dots).}\label{fig:epv_ticker_1}
+\end{figure}
 
 
+\end{knitrout}
 
+One of the best ways to view EPV results is by generating gifs that show EPV curves side-by-side with the possession evolution. Below we've generated gifs for a pair of long and interesting-looking possessions (they're located in the \texttt{gifs} folder):
 
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{makeGIF}\hlstd{(e.dat,} \hlkwd{which}\hlstd{(e.dat}\hlopt{$}\hlstd{possID} \hlopt{==} \hlnum{12}\hlstd{),} \hlstr{"poss_12"}\hlstd{)} \hlcom{# takes a few minutes}
+\hlkwd{makeGIF}\hlstd{(e.dat,} \hlkwd{which}\hlstd{(e.dat}\hlopt{$}\hlstd{possID} \hlopt{==} \hlnum{24}\hlstd{),} \hlstr{"poss_24"}\hlstd{)} \hlcom{# takes a few minutes}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+\subsection{Derived metrics}
+
+The derived metrics presented in the paper, EPV-Added (EPVA) and shot satisfaction, are most meaningful when computed using a large sample of data, such as a full season. However, just as with any other basketball metric, we can calculate per-game versions of these statistics. For instance, to get these metrics for LeBron James and Deron Williams, we'd do:
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{grep}\hlstd{(}\hlstr{"LeBron"}\hlstd{, players}\hlopt{$}\hlstd{firstname)]}
+\hlkwd{sum}\hlstd{(}\hlkwd{EPVA}\hlstd{(tdat, id))}       \hlcom{# sums EPV added on each touch}
+\end{alltt}
+\begin{verbatim}
+## [1] 8.336796
+\end{verbatim}
+\begin{alltt}
+\hlkwd{mean}\hlstd{(}\hlkwd{shotSatis}\hlstd{(tdat, id))} \hlcom{# averages shot satisfaction of each touch}
+\end{alltt}
+\begin{verbatim}
+## [1] 0.2229598
+\end{verbatim}
+\begin{alltt}
+\hlstd{id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{grep}\hlstd{(}\hlstr{"Deron"}\hlstd{, players}\hlopt{$}\hlstd{firstname)]} \hlcom{# Deron Williams}
+\hlkwd{sum}\hlstd{(}\hlkwd{EPVA}\hlstd{(tdat, id))}       \hlcom{# sums EPV added on each touch}
+\end{alltt}
+\begin{verbatim}
+## [1] 0.774197
+\end{verbatim}
+\begin{alltt}
+\hlkwd{mean}\hlstd{(}\hlkwd{shotSatis}\hlstd{(tdat, id))} \hlcom{# averages shot satisfaction of each touch}
+\end{alltt}
+\begin{verbatim}
+## [1] 0.1002317
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
 
 
 

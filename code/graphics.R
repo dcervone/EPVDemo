@@ -23,8 +23,8 @@ players.plotter <- function(dat, ind) {
 epv.plotter <- function(dat, ind, inds=NULL) {
   # plots EPV ticker
   if(is.null(inds)) {
-    pid <- dat$possession.id[ind]
-    inds <- which(dat$possession.id == pid)
+    pid <- dat$possID[ind]
+    inds <- which(dat$possID == pid)
   }
   x <- (720 - dat$game_clock[inds])
   y <- dat$epv.smooth[inds]
@@ -56,13 +56,15 @@ data.plotter <- function(dat, ind, poss=F, legend=F, ...) {
     points(dat[ind, c(sprintf("a%i_x", i), sprintf("a%i_y", i))], col="#98002E", cex=4.5, lwd=2)
     if(!(poss))
       next
-    if(dat[ind, sprintf("h%i_ent", i)] == dat[ind, "poss"]) {
-      pos.x <- dat[ind, sprintf("h%i_x", i)]
-      pos.y <- dat[ind, sprintf("h%i_y", i)]
-    }
-    if(dat[ind, sprintf("a%i_ent", i)] == dat[ind, "poss"]) {
-      pos.x <- dat[ind, sprintf("a%i_x", i)]
-      pos.y <- dat[ind, sprintf("a%i_y", i)]
+    if(!is.na(dat$poss[ind])) {
+      if(dat[ind, sprintf("h%i_ent", i)] == dat[ind, "poss"]) {
+        pos.x <- dat[ind, sprintf("h%i_x", i)]
+        pos.y <- dat[ind, sprintf("h%i_y", i)]
+      }
+      if(dat[ind, sprintf("a%i_ent", i)] == dat[ind, "poss"]) {
+        pos.x <- dat[ind, sprintf("a%i_x", i)]
+        pos.y <- dat[ind, sprintf("a%i_y", i)]
+      }
     }
   }
   points(dat[ind, c("x", "y")], col="orange", pch=20, cex=3)
@@ -238,4 +240,17 @@ vectorPlot <- function(io, ...){
            angle=30, lwd=lwds[i], col=rgb(cols[i,1], cols[i,2], cols[i,3], maxColorValue=255))
   }
   
+}
+
+makeGIF <- function(dat, inds, name) {
+  curwd <- getwd()
+  setwd(data.dir)
+  dir.create("../gifs")
+  setwd("../gifs")
+  ani.options(outdir=getwd(), interval=.04, ani.width=1000, ani.height=574)
+  saveGIF(for(ind in inds) {
+    full.plotter(dat, ind, poss=T, legend=T, epv=T, inds=inds)
+  }, movie.name=sprintf("%s.gif", name))
+  dev.off()
+  setwd(curwd)
 }

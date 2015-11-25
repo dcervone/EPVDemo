@@ -17,7 +17,8 @@ Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basket
 \maketitle
 
 <<chunk_opts, include=F>>=
-opts_chunk$set(size="footnotesize", cache=F, message=F,
+options(width=100)
+opts_chunk$set(size="footnotesize", cache=T, message=F,
                fig.lp='fig:', fig.pos='H', fig.align='center')
 @
 
@@ -32,7 +33,7 @@ code.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/code"
 data.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/data"
 @
 
-Now we load the \texttt{csv} file containing a full game of optical tracking data. As mentioned in the paper, data from this game was \bf{not} used in parameter inference for any model related to EPV.
+Now we load the \texttt{csv} file containing a full game of optical tracking data. As mentioned in the paper, data from this game was not used in parameter inference for any model related to EPV.
 
 <<load_data>>=
 dat <- read.csv(file=sprintf("%s/2013_11_01_MIA_BKN.csv", data.dir))
@@ -64,16 +65,21 @@ Column & Value & Notes \\
 
 Let's plot the data for some arbitrary moment in the game in Figure \ref{fig:plot_data}.
 
-<<plot_data, fig.width=5.6, fig.height=3, fig.cap='Plotting a single moment of optical tracking data.'>>=
+<<plot_data, fig.width=8, fig.height=4.15, fig.cap='Plotting a single moment of optical tracking data.'>>=
 source(sprintf("%s/constants.R", code.dir)) # loads libraries and constants used throughout code
 source(sprintf("%s/graphics.R", code.dir))  # graphics/plotting functions
-par(mar=rep(0, 4))
+par(mar=c(0, 0, 0, 0))
 data.plotter(dat, 1800)
 @
 
 \subsection{Transformed data}
 
-In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court. The following code performs these data tasks:
+In this format, the data lacks information necessary for computing EPV. Most importantly, the identity of the ballcarrier is not labeled, and most be inferred by the record of game actions (and positional data). We also need to record the covariates used by our multiresolution transition models, and perform some simple data manipulations, such as rotating all data to the offensive half-court and removing moments where the gameplay is suspended. The following code performs these data tasks:
+
+<<source_stuff, include=F>>=
+source(sprintf("%s/data_formatting.R", code.dir))
+source(sprintf("%s/covariates.R", code.dir))
+@
 
 <<manipulate_data, eval=FALSE>>=
 source(sprintf("%s/data_formatting.R", code.dir))
@@ -311,6 +317,7 @@ names(tmat.ind)
 Given estimates of our parameters, EPV is calculated using Monte Carlo. The general idea, introduced in Section 3 of the paper, is to alternate draws from the micro- and macrotransition entry models until a macrotransition (pass, shot attempt, turnover) occurs. Then, given the predicted outcome of this macrotransition, we calculate EPV using the transition probability matrix of coarsened states. Before actually simulating EPV draws, it's useful to look at what the expected point values are of each coarsened state, as EPV will always be a weighted average of these values:
 
 <<load_all_hyper>>=
+source(sprintf("%s/parameters.R", code.dir))
 hyper <- getHyperParams(tdat) # makes sure all parameter inference is loaded
 ev.out <- evLineups(tdat) # coarsened state EVs for each offensive lineup in tdat
 @
@@ -337,12 +344,84 @@ These results seem pretty sensible, as, for instance, EVs are uniformly higher f
 
 \subsection{EPV curves}
 
-% Define "touch ID" for each player touch sequence
-% Define "possession ID" starting with first touch of new team and continuing until clock stop or new team possession
+As mentioned in the paper, given estimates of all parameter values, EPV is computed by Monte Carlo sampling from the multiresolution transition models. This is a computationally expensive procedure, dominated by computing spatial effects for every player-position update from the microtransition model and hazard calculation from the macrotransition entry/exit models. However, it is straightforward to sample multiple time points together.
 
+To supply EPV curves for a full game, it's most efficient to draw a single EPV estimate for all time points in a game, and then parallelize this across multiple machines that don't need to share memory. The code executes an EPV draw at each time point for every offensive possession in our sample game:
 
+<<epv_draw_code, eval=FALSE>>=
+source(sprintf("%s/EPV_calcs.R", code.dir))
+draw.raw <- multiresDraw(tdat, hyper, def.micro, ev.out, nmic=50, save.positions=F)
+draw <- compressEPV(tdat, draw.raw$fv.epv.list)
+@
 
+The \texttt{nmic} argument specifies 50 iterations (2 seconds) of the microtranistion model, which is usually sufficient to observe $\tau_t$, a macrotransition entry. The \texttt{save.positions} argument stores the player-position innovations supplied by the micro model. These are necessary to reproduce Figure 7, which shows players' predicted motion paths, but necessitate lots of additional storage, as they essentially replicate the full positional data \texttt{nmic} times for each EPV draw.
 
+We can load a pre-computed version of \texttt{draw}:
+
+<<epv_draw>>=
+load(sprintf("%s/draw.Rdata", data.dir))
+names(draw)
+@
+
+Here, \texttt{epv} is a vector of EPV values corresponding to each row of \texttt{tdat}. \texttt{probs} is a data frame where each row gives the probabilities associated with each possible macrotransition event at time $t$ ($\mathbb{P}(C_{\delta_t} | \mathcal{F}^{(Z)}_t)$), and \texttt{vals} gives the associated expected point values conditional on these macrotransitions: $\mathbb{E}[X | C_{\delta_t}]$ (these probabilities/values are illustrated in Figure 7 of the paper). \texttt{probs} and \texttt{vals} contain an ``\texttt{other}'' state which represents no macrotransition occurring within the \texttt{50} simulated microtransitions. In this case, to calculate the expected value, we use the coarsened state expected value associated with the final microtransition draw, in this case $\mathbb{E}[X | C_{t + 2}]$. \texttt{probs.now} and \texttt{vals.now} are the instantaneous macrotransition probabilities and associated expected values. 
+
+For instance, during the first possession in this game, after Udonis Haslem brings the ball into the offensive halfcourt, we see the next action to most likely be  pass to Chalmers or Chris Bosh (the next play is a pass to Bosh). A shot attempt is extremely unlikely, and there is a 0.226 probability that Haslem will still possess the ball 2 seconds down the road. Among his passing options, James is the most valuable, though also the least likely to occur (James is near the basket, but the passing lane doesn't appear to be open). 
+
+<<epv_example_1, fig.width=2.5, fig.height=2.5, fig.cap='Udonis Haslem with ball possession. His four passing options are 1: Mario Chalmers, 2: Dwyane Wade, 3: LeBron James, 4: Chris Bosh.'>>=
+transformed.data.plotter(tdat, 30)
+draw$probs[30, ]
+draw$vals[30, ]
+@
+
+Because each EPV draw executes independent multiresolution transition simulations for each time point $t$, the resultant EPV curve is not very smooth. For instance, at time $t$, we might simulate a player driving toward the basket and attempting a layup, whereas at time $t+\epsilon$ we simulate the same player passing to a teammate. We see this below:
+
+<<epv_draw_plot, fig.width=4.5, fig.height=3.25, fig.cap="EPV estimates of a single draw">>=
+plot(720 - tdat$game_clock[1:100], draw$epv[1:100], xlab="game clock", ylab="EPV")
+@
+
+Of course, averaging over multiple EPV draws offers more smoothness---though by design, we see spikes in EPV exactly at moments when passes/shots/turnovers occur. The files \texttt{EPV\_draw.R} and \texttt{combine\_draws.R} execute independent EPV draws for this game on a computing cluster. We have combined 200 of these draws to obtain a final Monte Carlo EPV estimate (as well as Monte Carlo estimates of the transition probabilities and values). Below we load this, and merge these EPV estimates into the original full data set \texttt{dat}, where EPV is \texttt{NA} when the ball is not in the offensive halfcourt with the game clock moving. We also compute a "smoothed EPV" to (very slightly) interpolate the pointwise EPV estimates over time.
+
+<<epv_combined>>=
+source(sprintf("%s/EPV_calcs.R", code.dir))
+load(sprintf("%s/combined.epv.draws.Rdata", data.dir))
+e.dat <- combineDatEPV(dat, epv.table)
+@
+
+We can now plot out EPV ``tickers'', as in Figure 2 of the paper:
+
+<<epv_ticker_1, fig.width=8, fig.height=4, fig.cap='EPV curves for two possessions in this game. The line slightly smooths the actual EPV values (dots).'>>=
+par(xpd=NA, bty="n", mfrow=c(1, 2))
+poss.1 <- which(e.dat$possID == 1)
+plot(720 - e.dat$game_clock[poss.1], e.dat$epv.smooth[poss.1], 
+     xlab="game clock", ylab="EPV", type="l", lwd=2, ylim=c(.5, 1.5))
+points(720 - e.dat$game_clock[poss.1], e.dat$epv[poss.1], pch=20, cex=0.5)
+
+poss.90 <- which(e.dat$possID == 90) # possession shown in paper
+plot(720 - e.dat$game_clock[poss.90], e.dat$epv.smooth[poss.90], 
+     xlab="game clock", ylab="EPV", type="l", lwd=2, ylim=c(.5, 1.5))
+points(720 - e.dat$game_clock[poss.90], e.dat$epv[poss.90], pch=20, cex=0.5)
+@
+
+One of the best ways to view EPV results is by generating gifs that show EPV curves side-by-side with the possession evolution. Below we've generated gifs for a pair of long and interesting-looking possessions (they're located in the \texttt{gifs} folder):
+
+<<epv_gifs, eval=FALSE>>=
+makeGIF(e.dat, which(e.dat$possID == 12), "poss_12") # takes a few minutes
+makeGIF(e.dat, which(e.dat$possID == 24), "poss_24") # takes a few minutes
+@
+
+\subsection{Derived metrics}
+
+The derived metrics presented in the paper, EPV-Added (EPVA) and shot satisfaction, are most meaningful when computed using a large sample of data, such as a full season. However, just as with any other basketball metric, we can calculate per-game versions of these statistics. For instance, to get these metrics for LeBron James and Deron Williams, we'd do:
+
+<<derived_metrics>>=
+id <- players$player_id[grep("LeBron", players$firstname)]
+sum(EPVA(tdat, id))       # sums EPV added on each touch
+mean(shotSatis(tdat, id)) # averages shot satisfaction of each touch
+
+id <- players$player_id[grep("Deron", players$firstname)] # Deron Williams
+sum(EPVA(tdat, id))       # sums EPV added on each touch
+mean(shotSatis(tdat, id)) # averages shot satisfaction of each touch
+@
 
 
 

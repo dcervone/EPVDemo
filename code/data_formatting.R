@@ -237,6 +237,35 @@ rearrange.data <- function(dat, poss) {
   return(tdat)
 }
 
+# get team possession sequence ID
+get.possessionID <- function(dat, tdat) {
+  if(nrow(tdat) != nrow(dat)) {
+    stop("tdat and dat must have same number of rows")
+  }
+  clock.diff <- c(0, diff(dat$game_clock))
+  clock.moving <- clock.diff < -.01 & clock.diff > -.1
+  
+  now.team <- as.vector(tdat$team)
+  for(i in 2:length(now.team)) {
+    if(is.na(now.team[i]))
+      now.team[i] <- now.team[i-1]
+  }
+  now.team[which(!clock.moving)] <- "n"
+  now.team[which(is.na(now.team))] <- "n"
+  prev.team <- c("n", now.team[-length(now.team)])
+  next.team <- c(now.team[-1], "n")
+  poss.start.idx <- which(now.team %in% c("h", "a") & prev.team != now.team)
+  poss.end.idx <- which(now.team %in% c("h", "a") & next.team != now.team)
+  if(!all(poss.start.idx <= poss.end.idx))
+    stop("possession integrity check failed")
+  posses <- sapply(seq(poss.start.idx), function(i) seq(poss.start.idx[i], poss.end.idx[i]))
+  possessionID <- rep(NA, nrow(dat))
+  for(i in 1:length(posses)) {
+    possessionID[posses[[i]]] <- i
+  }
+  return(possessionID)
+}
+
 # flip data to offensive halfcourt
 offensive.halfcourt <- function(dat) {
   print("flipping")

@@ -24,7 +24,6 @@ source(sprintf("%s/graphics.R", code.dir))
 source(sprintf("%s/parameters.R", code.dir))
 source(sprintf("%s/EPV_calcs.R", code.dir))
 
-
 load(sprintf("%s/tdat.Rdata", data.dir))
 
 def.micro <- microDefModel(tdat)
