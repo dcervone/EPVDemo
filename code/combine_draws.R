@@ -1,3 +1,9 @@
+# **********************
+#
+# Combines independent EPV draws output from epv_draw.R
+#
+# **********************
+
 code.dir <- "../code"
 data.dir <- "../data"
 library(data.table)
@@ -45,7 +51,5 @@ for(chunk in chunks) {
 epv.table <- data.frame(time=tdat$time, poss=tdat$entity, poss_x=tdat$x,
                       epv=epv, epv.smooth=epv.smooth, probs=probs, vals=vals,
                       probs.now=probs.now, vals.now=vals.now)
-
-
 
 save(epv.table, file=sprintf("%s/combined.epv.draws.Rdata", data.dir))

@@ -4,6 +4,17 @@
 #
 # **********************
 
+
+# install and/or load necessary packages
+local.packages <- installed.packages()[,"Package"]
+if(!("INLA" %in% local.packages))
+  install.packages("INLA", repos="http://www.math.ntnu.no/inla/R/stable")
+local.packages <- installed.packages()[,"Package"]
+req.packages <- c("xtable", "data.table", "matrixStats", "RColorBrewer", "fields", "animation")
+needed.packages <- req.packages[!(req.packages %in% local.packages)]
+if(length(needed.packages) > 0) 
+  install.packages(needed.packages)
+
 library(xtable)
 library(data.table)
 library(matrixStats)

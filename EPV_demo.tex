@@ -67,17 +67,25 @@ Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basket
 
 
 
-This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. 
+This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. Compiling this document from source \texttt{.Rnw} requires the \texttt{knitr} \texttt{R} package, and takes about 1 minute on most systems. It can be done either by loading \texttt{EPV\_demo.Rnw} into RStudio, or directly from the command line by navigating to the directory containing \texttt{EPV\_demo.Rnw} and executing:
 
-\section{Loading the Data}
+\begin{kframe}
+\begin{alltt}
+Rscript -e \hlstr{"\hlkwd{library}(knitr); \hlkwd{knit}(\hlstr{'./EPV_demo.Rnw'})"}
+\end{alltt}
+\end{kframe}
 
-To begin, we must first set the directories containing the supplemental data and code.
+This produces \texttt{EPV\_demo.tex}, which can then be compiled into a pdf using any of the usual methods. 
+
+\section{Loading the data}
+
+To begin, we must first set the directories containing the supplemental data and code, and install/load all necessary packages.
 
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlstd{code.dir} \hlkwb{<-} \hlstr{"~/xyhoops/XYHoops/dlc_src/new/demo/code"}
-\hlstd{data.dir} \hlkwb{<-} \hlstr{"~/xyhoops/XYHoops/dlc_src/new/demo/data"}
+\hlstd{code.dir} \hlkwb{<-} \hlstr{"./code"}
+\hlstd{data.dir} \hlkwb{<-} \hlstr{"./data"}
 \end{alltt}
 \end{kframe}
 \end{knitrout}
@@ -335,7 +343,7 @@ Here, we will load and illustrate the results of the multiresolution transition 
 \hlkwd{xtable}\hlstd{(with.ball}\hlopt{$}\hlstd{io.x}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Tue Nov 24 21:56:14 2015
+% Wed Nov 25 20:31:04 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -380,7 +388,7 @@ The defensive microtransition model is less complicated, and we can fit it very 
 \hlkwd{xtable}\hlstd{(}\hlkwd{summary}\hlstd{(def.micro}\hlopt{$}\hlstd{mod.x)}\hlopt{$}\hlstd{coef[,} \hlnum{1}\hlopt{:}\hlnum{3}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Tue Nov 24 21:56:21 2015
+% Wed Nov 25 20:31:11 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrr}
@@ -410,7 +418,7 @@ We have six macrotransition entry models (from Section 3.2 of the paper). Each i
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{2}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Tue Nov 24 21:56:28 2015
+% Wed Nov 25 20:31:18 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrr}
@@ -446,7 +454,7 @@ We have six macrotransition entry models (from Section 3.2 of the paper). Each i
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.dribble[this.player,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Tue Nov 24 21:56:29 2015
+% Wed Nov 25 20:31:19 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -470,7 +478,7 @@ However, the random effects on the spatial basis coefficients are stacked in a $
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Tue Nov 24 21:56:29 2015
+% Wed Nov 25 20:31:19 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -486,7 +494,7 @@ However, the random effects on the spatial basis coefficients are stacked in a $
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.b1[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])} \hlcom{# identical}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Tue Nov 24 21:56:29 2015
+% Wed Nov 25 20:31:19 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -535,7 +543,7 @@ For Chris Bosh, for instance, we can view his parameter estimates and see where 
 \hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(param.names, values, ranks),} \hlkwc{digits}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{2}\hlstd{,}\hlnum{0}\hlstd{))}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Tue Nov 24 21:56:29 2015
+% Wed Nov 25 20:31:19 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rlrr}
@@ -686,7 +694,7 @@ For each 5-man lineup, there are $5 \times 2 \text{ (defended or not) } \times 7
 \hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(}\hlkwc{state}\hlstd{=lineup.states,} \hlkwc{EV}\hlstd{=ev.out}\hlopt{$}\hlstd{evs[[}\hlnum{2}\hlstd{]])[}\hlkwd{grep}\hlstd{(}\hlstr{"James"}\hlstd{, lineup.states), ],} \hlkwc{digits}\hlstd{=}\hlnum{2}\hlstd{)}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Tue Nov 24 21:56:31 2015
+% Wed Nov 25 20:31:21 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rlr}
@@ -887,6 +895,28 @@ The derived metrics presented in the paper, EPV-Added (EPVA) and shot satisfacti
 \end{kframe}
 \end{knitrout}
 
+\section{Appendix}
 
+Raw data \texttt{event\_id} codes:
+\begin{table}[h!]
+\begin{tabular}{lr|lr|lr|lr|lr}
+\toprule
+Event & ID & Event & ID & Event & ID & Event & ID & Event & ID \\
+\midrule
+FT Made &  1 & Def. Rebound &  6 & Timeout & 11 & Clock Sync & 16 & Dribble & 21 \\
+FT Missed &  2 & Turnover &  7 & Jump Ball & 12 & Instant Replay & 17 & Pass & 22 \\
+Shot Made &  3 & Foul  & 8 & Ejection & 13 & Replay Ruling & 18 & Possession & 23 \\
+Shot Missed &  4 & Violation &  9 & Start Period & 14 & Game Over & 19 & Shot Block & 24 \\
+Off. Rebound &  5 &
+Substitution & 10 &
+End Period & 15 &
+Stoppage & 20 &
+Assist & 25  \\
+\bottomrule
+\end{tabular}
+\label{tab:event_codes}
+\caption{Glossary of \texttt{event\_id} codes in optical tracking data.}
+\end{table}
+\
 
 \end{document}

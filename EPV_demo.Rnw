@@ -22,15 +22,21 @@ opts_chunk$set(size="footnotesize", cache=T, message=F,
                fig.lp='fig:', fig.pos='H', fig.align='center')
 @
 
-This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. 
+This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. Compiling this document from source \texttt{.Rnw} requires the \texttt{knitr} \texttt{R} package, and takes about 1 minute on most systems. It can be done either by loading \texttt{EPV\_demo.Rnw} into RStudio, or directly from the command line by navigating to the directory containing \texttt{EPV\_demo.Rnw} and executing:
 
-\section{Loading the Data}
+<<how_to_compile, eval=FALSE, results="asis", tidy=FALSE>>=
+Rscript -e "library(knitr); knit('./EPV_demo.Rnw')"
+@
 
-To begin, we must first set the directories containing the supplemental data and code.
+This produces \texttt{EPV\_demo.tex}, which can then be compiled into a pdf using any of the usual methods. 
+
+\section{Loading the data}
+
+To begin, we must first set the directories containing the supplemental data and code, and install/load all necessary packages.
 
 <<directory_setup>>=
-code.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/code"
-data.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/data"
+code.dir <- "./code"
+data.dir <- "./data"
 @
 
 Now we load the \texttt{csv} file containing a full game of optical tracking data. As mentioned in the paper, data from this game was not used in parameter inference for any model related to EPV.
@@ -423,6 +429,28 @@ sum(EPVA(tdat, id))       # sums EPV added on each touch
 mean(shotSatis(tdat, id)) # averages shot satisfaction of each touch
 @
 
+\section{Appendix}
 
+Raw data \texttt{event\_id} codes:
+\begin{table}[h!]
+\begin{tabular}{lr|lr|lr|lr|lr}
+\toprule
+Event & ID & Event & ID & Event & ID & Event & ID & Event & ID \\
+\midrule
+FT Made &  1 & Def. Rebound &  6 & Timeout & 11 & Clock Sync & 16 & Dribble & 21 \\
+FT Missed &  2 & Turnover &  7 & Jump Ball & 12 & Instant Replay & 17 & Pass & 22 \\
+Shot Made &  3 & Foul  & 8 & Ejection & 13 & Replay Ruling & 18 & Possession & 23 \\
+Shot Missed &  4 & Violation &  9 & Start Period & 14 & Game Over & 19 & Shot Block & 24 \\
+Off. Rebound &  5 &
+Substitution & 10 &
+End Period & 15 &
+Stoppage & 20 &
+Assist & 25  \\
+\bottomrule
+\end{tabular}
+\label{tab:event_codes}
+\caption{Glossary of \texttt{event\_id} codes in optical tracking data.}
+\end{table}
+\
 
 \end{document}

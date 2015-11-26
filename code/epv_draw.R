@@ -8,9 +8,6 @@
 code.dir <- "../code"
 data.dir <- "../data"
 
-# code.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/code"
-# data.dir <- "~/xyhoops/XYHoops/dlc_src/new/demo/data"
-
 args <- as.vector(commandArgs(trailingOnly=TRUE)) # EPV draw number
 draw.num <- as.numeric(args[1])
 
