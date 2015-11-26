@@ -215,7 +215,6 @@ We have six macrotransition entry models (from Section 3.2 of the paper). Each i
 \begin{footnotesize}
 <<shot_macro, results="asis">>=
 load(sprintf("%s/INLA_TAKE.Rdata", data.dir))
-inla.out <- inla.out.lite
 # coefficients for time-varying covariates in shot-taking hazard model
 xtable(inla.out$summary.fixed[, 1:2])
 @
@@ -291,7 +290,6 @@ To view the spatial effect on a passing hazard (for instance, to player 1---the 
 
 <<bosh_pass1_hazard, fig.width=5, fig.height=2, fig.cap="Spatial effect for passes from Chris Bosh to the point guard. The effect of Bosh's location is on the left, and the effect of the PG's location is on the right.">>=
 load(sprintf("%s/INLA_PASS1.Rdata", data.dir))
-inla.out <- inla.out.lite
 vars <- paste0("b", seq(n.basis))
 spat.fixed <- as.numeric(inla.out$summary.fixed["(Intercept)", "mean"] + 
                            t(pass1.basis) %*% inla.out$summary.fixed[vars, "mean"])
@@ -303,6 +301,14 @@ spatialPlot2(head(spat.fixed + spat.random, mesh$n),
              tail(spat.fixed + spat.random, mesh$n),
                   axis.args=list(cex.axis=0.75))
 @
+
+Lastly, it's useful to check the hyperparameter estimates to make sure they are sensible. The hyperparameters for the macrotransition entry models (and shot probability model) and log precision terms for the CAR model, described in Sections 4.1 and 4.2 of the paper. In this implementation, we've fixed the hyperparameters for all spatial basis loadings to be the same within each macrotransition entry model.
+
+<<hyperparams>>=
+inla.out$mode$theta        # parameter values
+inla.out$mode$theta.tags   # parameter names
+@
+
 
 \subsection{Transition probability matrices}
 
@@ -451,6 +457,5 @@ Assist & 25  \\
 \label{tab:event_codes}
 \caption{Glossary of \texttt{event\_id} codes in optical tracking data.}
 \end{table}
-\
 
 \end{document}

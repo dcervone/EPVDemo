@@ -343,7 +343,7 @@ Here, we will load and illustrate the results of the multiresolution transition 
 \hlkwd{xtable}\hlstd{(with.ball}\hlopt{$}\hlstd{io.x}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 25 20:31:04 2015
+% Thu Nov 26 02:38:29 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -388,7 +388,7 @@ The defensive microtransition model is less complicated, and we can fit it very 
 \hlkwd{xtable}\hlstd{(}\hlkwd{summary}\hlstd{(def.micro}\hlopt{$}\hlstd{mod.x)}\hlopt{$}\hlstd{coef[,} \hlnum{1}\hlopt{:}\hlnum{3}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 25 20:31:11 2015
+% Thu Nov 26 02:38:36 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrr}
@@ -413,12 +413,11 @@ We have six macrotransition entry models (from Section 3.2 of the paper). Each i
 \begin{kframe}
 \begin{alltt}
 \hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/INLA_TAKE.Rdata"}\hlstd{, data.dir))}
-\hlstd{inla.out} \hlkwb{<-} \hlstd{inla.out.lite}
 \hlcom{# coefficients for time-varying covariates in shot-taking hazard model}
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{2}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 25 20:31:18 2015
+% Thu Nov 26 02:38:43 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrr}
@@ -454,7 +453,7 @@ We have six macrotransition entry models (from Section 3.2 of the paper). Each i
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.dribble[this.player,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 25 20:31:19 2015
+% Thu Nov 26 02:38:44 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -478,7 +477,7 @@ However, the random effects on the spatial basis coefficients are stacked in a $
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 25 20:31:19 2015
+% Thu Nov 26 02:38:44 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -494,7 +493,7 @@ However, the random effects on the spatial basis coefficients are stacked in a $
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.b1[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])} \hlcom{# identical}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 25 20:31:19 2015
+% Thu Nov 26 02:38:44 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -543,7 +542,7 @@ For Chris Bosh, for instance, we can view his parameter estimates and see where 
 \hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(param.names, values, ranks),} \hlkwc{digits}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{2}\hlstd{,}\hlnum{0}\hlstd{))}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 25 20:31:19 2015
+% Thu Nov 26 02:38:44 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rlrr}
@@ -605,7 +604,6 @@ To view the spatial effect on a passing hazard (for instance, to player 1---the 
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{load}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/INLA_PASS1.Rdata"}\hlstd{, data.dir))}
-\hlstd{inla.out} \hlkwb{<-} \hlstd{inla.out.lite}
 \hlstd{vars} \hlkwb{<-} \hlkwd{paste0}\hlstd{(}\hlstr{"b"}\hlstd{,} \hlkwd{seq}\hlstd{(n.basis))}
 \hlstd{spat.fixed} \hlkwb{<-} \hlkwd{as.numeric}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.fixed[}\hlstr{"(Intercept)"}\hlstd{,} \hlstr{"mean"}\hlstd{]} \hlopt{+}
                            \hlkwd{t}\hlstd{(pass1.basis)} \hlopt{%*%} \hlstd{inla.out}\hlopt{$}\hlstd{summary.fixed[vars,} \hlstr{"mean"}\hlstd{])}
@@ -628,6 +626,29 @@ To view the spatial effect on a passing hazard (for instance, to player 1---the 
 
 
 \end{knitrout}
+
+Lastly, it's useful to check the hyperparameter estimates to make sure they are sensible. The hyperparameters for the macrotransition entry models (and shot probability model) and log precision terms for the CAR model, described in Sections 4.1 and 4.2 of the paper. In this implementation, we've fixed the hyperparameters for all spatial basis loadings to be the same within each macrotransition entry model.
+
+\begin{knitrout}\footnotesize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{inla.out}\hlopt{$}\hlstd{mode}\hlopt{$}\hlstd{theta}        \hlcom{# parameter values}
+\end{alltt}
+\begin{verbatim}
+## [1] -2.36010142 -0.04486083  0.53744864  4.00845149 -0.12840774  0.46386675  0.88176478 -0.21073187
+\end{verbatim}
+\begin{alltt}
+\hlstd{inla.out}\hlopt{$}\hlstd{mode}\hlopt{$}\hlstd{theta.tags}   \hlcom{# parameter names}
+\end{alltt}
+\begin{verbatim}
+## [1] "Log precision for p.int"          "Log precision for p.dribble"     
+## [3] "Log precision for p.ndef"         "Log precision for p.ball.lastsec"
+## [5] "Log precision for p.doff1"        "Log precision for p.doff2"       
+## [7] "Log precision for p.doff3"        "Log precision for p.ddef"
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
 
 \subsection{Transition probability matrices}
 
@@ -659,6 +680,10 @@ Given estimates of our parameters, EPV is calculated using Monte Carlo. The gene
 \begin{alltt}
 \hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/parameters.R"}\hlstd{, code.dir))}
 \hlstd{hyper} \hlkwb{<-} \hlkwd{getHyperParams}\hlstd{(tdat)} \hlcom{# makes sure all parameter inference is loaded}
+\end{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'inla.out.lite' not found}}\begin{alltt}
 \hlstd{ev.out} \hlkwb{<-} \hlkwd{evLineups}\hlstd{(tdat)} \hlcom{# coarsened state EVs for each offensive lineup in tdat}
 \end{alltt}
 \end{kframe}
@@ -694,7 +719,7 @@ For each 5-man lineup, there are $5 \times 2 \text{ (defended or not) } \times 7
 \hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(}\hlkwc{state}\hlstd{=lineup.states,} \hlkwc{EV}\hlstd{=ev.out}\hlopt{$}\hlstd{evs[[}\hlnum{2}\hlstd{]])[}\hlkwd{grep}\hlstd{(}\hlstr{"James"}\hlstd{, lineup.states), ],} \hlkwc{digits}\hlstd{=}\hlnum{2}\hlstd{)}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Wed Nov 25 20:31:21 2015
+% Thu Nov 26 02:38:45 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rlr}
@@ -870,29 +895,25 @@ The derived metrics presented in the paper, EPV-Added (EPVA) and shot satisfacti
 \hlstd{id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{grep}\hlstd{(}\hlstr{"LeBron"}\hlstd{, players}\hlopt{$}\hlstd{firstname)]}
 \hlkwd{sum}\hlstd{(}\hlkwd{EPVA}\hlstd{(tdat, id))}       \hlcom{# sums EPV added on each touch}
 \end{alltt}
-\begin{verbatim}
-## [1] 8.336796
-\end{verbatim}
-\begin{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'inla.out.lite' not found}}\begin{alltt}
 \hlkwd{mean}\hlstd{(}\hlkwd{shotSatis}\hlstd{(tdat, id))} \hlcom{# averages shot satisfaction of each touch}
 \end{alltt}
-\begin{verbatim}
-## [1] 0.2229598
-\end{verbatim}
-\begin{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in mean(shotSatis(tdat, id)): error in evaluating the argument 'x' in selecting a method for function 'mean': Error: object 'inla.out.lite' not found}}\begin{alltt}
 \hlstd{id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{grep}\hlstd{(}\hlstr{"Deron"}\hlstd{, players}\hlopt{$}\hlstd{firstname)]} \hlcom{# Deron Williams}
 \hlkwd{sum}\hlstd{(}\hlkwd{EPVA}\hlstd{(tdat, id))}       \hlcom{# sums EPV added on each touch}
 \end{alltt}
-\begin{verbatim}
-## [1] 0.774197
-\end{verbatim}
-\begin{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'inla.out.lite' not found}}\begin{alltt}
 \hlkwd{mean}\hlstd{(}\hlkwd{shotSatis}\hlstd{(tdat, id))} \hlcom{# averages shot satisfaction of each touch}
 \end{alltt}
-\begin{verbatim}
-## [1] 0.1002317
-\end{verbatim}
-\end{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in mean(shotSatis(tdat, id)): error in evaluating the argument 'x' in selecting a method for function 'mean': Error: object 'inla.out.lite' not found}}\end{kframe}
 \end{knitrout}
 
 \section{Appendix}
@@ -917,6 +938,5 @@ Assist & 25  \\
 \label{tab:event_codes}
 \caption{Glossary of \texttt{event\_id} codes in optical tracking data.}
 \end{table}
-\
 
 \end{document}
