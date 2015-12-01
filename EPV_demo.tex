@@ -67,15 +67,7 @@ Supplement to ``A Multiresolution Stochastic Process Model for Predicting Basket
 
 
 
-This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. Compiling this document from source \texttt{.Rnw} requires the \texttt{knitr} \texttt{R} package, and takes about 1 minute on most systems. It can be done either by loading \texttt{EPV\_demo.Rnw} into RStudio, or directly from the command line by navigating to the directory containing \texttt{EPV\_demo.Rnw} and executing:
-
-\begin{kframe}
-\begin{alltt}
-Rscript -e \hlstr{"\hlkwd{library}(knitr); \hlkwd{knit}(\hlstr{'./EPV_demo.Rnw'})"}
-\end{alltt}
-\end{kframe}
-
-This produces \texttt{EPV\_demo.tex}, which can then be compiled into a pdf using any of the usual methods. 
+This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in our paper.
 
 \section{Loading the data}
 
@@ -110,7 +102,7 @@ Column & Value & Notes \\
 \texttt{time} & Real time (ms) & \\
 \texttt{game} & Game ID & \\
 \texttt{quarter} & Quarter & \\
-\texttt{shot\_clock} & Time remaining on shot clock & \\
+\texttt{shot\_clock} & Time remaining on shot clock & \texttt{NA} for this game \\
 \texttt{game\_clock} & Time remaining in quarter (s) & \\
 \texttt{x, y, z} & Ball position (ft) & Court region is $[0, 94] \times [0, 50]$ \\
 \texttt{a1\_ent} & ID number of player 1 on away team (\texttt{a1}) & \\
@@ -343,7 +335,7 @@ Here, we will load and illustrate the results of the multiresolution transition 
 \hlkwd{xtable}\hlstd{(with.ball}\hlopt{$}\hlstd{io.x}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{5}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Thu Nov 26 02:38:29 2015
+% Tue Dec  1 02:11:09 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -388,7 +380,7 @@ The defensive microtransition model is less complicated, and we can fit it very 
 \hlkwd{xtable}\hlstd{(}\hlkwd{summary}\hlstd{(def.micro}\hlopt{$}\hlstd{mod.x)}\hlopt{$}\hlstd{coef[,} \hlnum{1}\hlopt{:}\hlnum{3}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Thu Nov 26 02:38:36 2015
+% Tue Dec  1 02:11:16 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrr}
@@ -417,7 +409,7 @@ We have six macrotransition entry models (from Section 3.2 of the paper). Each i
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.fixed[,} \hlnum{1}\hlopt{:}\hlnum{2}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Thu Nov 26 02:38:43 2015
+% Tue Dec  1 02:11:24 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrr}
@@ -453,7 +445,7 @@ We have six macrotransition entry models (from Section 3.2 of the paper). Each i
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.dribble[this.player,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Thu Nov 26 02:38:44 2015
+% Tue Dec  1 02:11:24 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -477,7 +469,7 @@ However, the random effects on the spatial basis coefficients are stacked in a $
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.int[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Thu Nov 26 02:38:44 2015
+% Tue Dec  1 02:11:24 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -493,7 +485,7 @@ However, the random effects on the spatial basis coefficients are stacked in a $
 \hlkwd{xtable}\hlstd{(inla.out}\hlopt{$}\hlstd{summary.random}\hlopt{$}\hlstd{p.b1[this.player} \hlopt{+} \hlnum{0}\hlopt{:}\hlnum{1}\hlstd{,} \hlnum{2}\hlopt{:}\hlnum{6}\hlstd{])} \hlcom{# identical}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Thu Nov 26 02:38:44 2015
+% Tue Dec  1 02:11:24 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -542,7 +534,7 @@ For Chris Bosh, for instance, we can view his parameter estimates and see where 
 \hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(param.names, values, ranks),} \hlkwc{digits}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlnum{2}\hlstd{,}\hlnum{0}\hlstd{))}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Thu Nov 26 02:38:44 2015
+% Tue Dec  1 02:11:24 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rlrr}
@@ -680,10 +672,6 @@ Given estimates of our parameters, EPV is calculated using Monte Carlo. The gene
 \begin{alltt}
 \hlkwd{source}\hlstd{(}\hlkwd{sprintf}\hlstd{(}\hlstr{"%s/parameters.R"}\hlstd{, code.dir))}
 \hlstd{hyper} \hlkwb{<-} \hlkwd{getHyperParams}\hlstd{(tdat)} \hlcom{# makes sure all parameter inference is loaded}
-\end{alltt}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'inla.out.lite' not found}}\begin{alltt}
 \hlstd{ev.out} \hlkwb{<-} \hlkwd{evLineups}\hlstd{(tdat)} \hlcom{# coarsened state EVs for each offensive lineup in tdat}
 \end{alltt}
 \end{kframe}
@@ -719,7 +707,7 @@ For each 5-man lineup, there are $5 \times 2 \text{ (defended or not) } \times 7
 \hlkwd{xtable}\hlstd{(}\hlkwd{data.frame}\hlstd{(}\hlkwc{state}\hlstd{=lineup.states,} \hlkwc{EV}\hlstd{=ev.out}\hlopt{$}\hlstd{evs[[}\hlnum{2}\hlstd{]])[}\hlkwd{grep}\hlstd{(}\hlstr{"James"}\hlstd{, lineup.states), ],} \hlkwc{digits}\hlstd{=}\hlnum{2}\hlstd{)}
 \end{alltt}
 \end{kframe}% latex table generated in R 3.2.2 by xtable 1.8-0 package
-% Thu Nov 26 02:38:45 2015
+% Tue Dec  1 02:11:26 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{rlr}
@@ -895,25 +883,29 @@ The derived metrics presented in the paper, EPV-Added (EPVA) and shot satisfacti
 \hlstd{id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{grep}\hlstd{(}\hlstr{"LeBron"}\hlstd{, players}\hlopt{$}\hlstd{firstname)]}
 \hlkwd{sum}\hlstd{(}\hlkwd{EPVA}\hlstd{(tdat, id))}       \hlcom{# sums EPV added on each touch}
 \end{alltt}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'inla.out.lite' not found}}\begin{alltt}
+\begin{verbatim}
+## [1] 8.336796
+\end{verbatim}
+\begin{alltt}
 \hlkwd{mean}\hlstd{(}\hlkwd{shotSatis}\hlstd{(tdat, id))} \hlcom{# averages shot satisfaction of each touch}
 \end{alltt}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in mean(shotSatis(tdat, id)): error in evaluating the argument 'x' in selecting a method for function 'mean': Error: object 'inla.out.lite' not found}}\begin{alltt}
+\begin{verbatim}
+## [1] 0.2229599
+\end{verbatim}
+\begin{alltt}
 \hlstd{id} \hlkwb{<-} \hlstd{players}\hlopt{$}\hlstd{player_id[}\hlkwd{grep}\hlstd{(}\hlstr{"Deron"}\hlstd{, players}\hlopt{$}\hlstd{firstname)]} \hlcom{# Deron Williams}
 \hlkwd{sum}\hlstd{(}\hlkwd{EPVA}\hlstd{(tdat, id))}       \hlcom{# sums EPV added on each touch}
 \end{alltt}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'inla.out.lite' not found}}\begin{alltt}
+\begin{verbatim}
+## [1] 0.774197
+\end{verbatim}
+\begin{alltt}
 \hlkwd{mean}\hlstd{(}\hlkwd{shotSatis}\hlstd{(tdat, id))} \hlcom{# averages shot satisfaction of each touch}
 \end{alltt}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in mean(shotSatis(tdat, id)): error in evaluating the argument 'x' in selecting a method for function 'mean': Error: object 'inla.out.lite' not found}}\end{kframe}
+\begin{verbatim}
+## [1] 0.1002303
+\end{verbatim}
+\end{kframe}
 \end{knitrout}
 
 \section{Appendix}

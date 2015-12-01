@@ -77,7 +77,7 @@ getHyperParams <- function(tdat) {
   for(i in 1:length(inla.names)) {
     # print(sprintf("loading inla output %i of %i", i, length(inla.names)))
     load(sprintf("%s/INLA_%s.Rdata", data.dir, inla.names[i]))
-    inlas[[i]] <- inla.out.lite
+    inlas[[i]] <- inla.out
   }
   
   # which players in the league are in tdat

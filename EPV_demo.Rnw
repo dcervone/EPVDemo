@@ -22,15 +22,7 @@ opts_chunk$set(size="footnotesize", cache=T, message=F,
                fig.lp='fig:', fig.pos='H', fig.align='center')
 @
 
-This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in the paper. We would like to acknowledge STATS, LLC for allowing the public release of this data sample, and hope that this tutorial helps strengthen and broaden the impact of our paper.
-
-Compiling this document from source \texttt{.Rnw} requires the \texttt{knitr} \texttt{R} package, and takes about 1 minute on most systems. It can be done either by loading \texttt{EPV\_demo.Rnw} into RStudio, or directly from the command line by navigating to the directory containing \texttt{EPV\_demo.Rnw} and executing:
-
-<<how_to_compile, eval=FALSE, results="asis", tidy=FALSE>>=
-Rscript -e "library(knitr); knit('./EPV_demo.Rnw')"
-@
-
-This produces \texttt{EPV\_demo.tex}, which can then be compiled into a pdf using any of the usual methods. 
+This document provides a demonstration of the code, methodology, and inferential results for the EPV model discussed in our paper.
 
 \section{Loading the data}
 
