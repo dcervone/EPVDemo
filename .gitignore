@@ -3,3 +3,5 @@ figure/
 *.aux
 *.log
 *.gz
+.gitignire~
+EPV_demo-concordance.tex
