@@ -12,6 +12,6 @@ The main document that introduces and illustrates the code/data is EPV_demo.pdf.
 
 > Rscript -e "library(knitr); knit('./EPV_demo.Rnw')"
 
-This operation requires the `knitr` `R` package, and takes about 1 minute on most systems. Users should be running the latest version of `R` with the following packages (and all of their dependencies) installed: `knitr`, `INLA`, `xtable`, `data.table`, `matrixStats`, `RColorBrewer`, `fields`, `animation`. By default, the missing packages will try to be automatically installed when compiling EPV_demo.Rnw
+This operation requires the `knitr` `R` package, and takes about 1 minute on most systems. Users should be running the latest version of `R` with the following packages (and all of their dependencies) installed: `sp`, `knitr`, `INLA`, `xtable`, `data.table`, `matrixStats`, `RColorBrewer`, `fields`, `animation`. By default, the missing packages will try to be automatically installed when compiling EPV_demo.Rnw
 
-We would like to acknowledge STATS, LLC for consenting the inclusion of this data sample.
+We would like to acknowledge STATS, LLC for consenting the inclusion of a full-game data sample.
